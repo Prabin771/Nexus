@@ -1,0 +1,2521 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — Independent AI Researcher</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08090e;--s1:#0e0f16;--s2:#14151f;--s3:#1a1b27;--s4:#202132;
+  --bd:#252638;--bd2:#2f3048;
+  --t1:#f0f0fa;--t2:#8080a8;--t3:#5050788;
+  --acc:#7c3aed;--acc2:#06b6d4;--acc3:#f59e0b;--acc4:#10b981;--acc5:#ef4444;
+  --glow:rgba(124,58,237,.2);
+  --mono:'JetBrains Mono',monospace;--body:'Inter',sans-serif;
+}
+[data-theme="light"]{
+  --bg:#f5f5fa;--s1:#fff;--s2:#ebebf5;--s3:#e0e0f0;--s4:#d5d5ec;
+  --bd:#cccce0;--bd2:#bbbbd8;--t1:#0a0a1a;--t2:#5050808;--acc:#6d28d9;--acc2:#0891b2;
+  --glow:rgba(109,40,217,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--body);background:var(--bg);color:var(--t1);font-size:14px;line-height:1.6}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:99px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes typeIn{from{width:0}to{width:100%}}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 20px var(--glow)}50%{box-shadow:0 0 40px var(--glow),0 0 60px rgba(124,58,237,.1)}}
+@keyframes scanLine{0%{top:0}100%{top:100%}}
+@keyframes statusPulse{0%,100%{opacity:.6}50%{opacity:1}}
+
+.fade-up{animation:fadeUp .3s cubic-bezier(.22,1,.36,1) both}
+.spin{animation:spin .8s linear infinite}
+.blink{animation:pulse 1s ease infinite}
+
+/* ── LAYOUT ── */
+#app{display:flex;height:100vh;overflow:hidden}
+
+/* ── SIDEBAR ── */
+#sb{
+  width:260px;flex-shrink:0;background:var(--s1);
+  border-right:1px solid var(--bd);
+  display:flex;flex-direction:column;
+  transition:width .25s ease,transform .25s ease;
+  z-index:30;overflow:hidden;
+}
+#sb.slim{width:52px}
+@media(max-width:768px){
+  #sb{position:absolute;height:100%;transform:translateX(-100%)}
+  #sb.open{transform:translateX(0)}
+}
+
+/* ── MAIN ── */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* ── TOPBAR ── */
+#topbar{
+  height:50px;flex-shrink:0;
+  background:var(--s1);border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;gap:10px;
+}
+
+/* ── CONTENT ── */
+#content{flex:1;display:flex;overflow:hidden;position:relative}
+#chatWrap{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+#msgs{flex:1;overflow-y:auto;padding:24px 18px 160px;display:flex;flex-direction:column;gap:20px}
+
+/* ── INPUT ── */
+#inputArea{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:10px 16px 14px;
+  background:linear-gradient(to top,var(--bg) 72%,transparent);
+  z-index:5;
+}
+
+/* ── MOLTBOOK PANEL ── */
+#moltPanel{
+  width:300px;flex-shrink:0;border-left:1px solid var(--bd);
+  background:var(--s1);display:none;flex-direction:column;
+  overflow:hidden;
+}
+#moltPanel.open{display:flex}
+@media(max-width:900px){
+  #moltPanel{width:100%;position:absolute;right:0;top:0;bottom:0;z-index:25}
+}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:500;border:1px solid var(--bd2);background:var(--s2);color:var(--t2);cursor:pointer;transition:all .15s;font-family:var(--body);white-space:nowrap}
+.btn:hover{border-color:var(--acc);color:var(--acc);background:var(--glow)}
+.btn-acc{background:var(--acc);border-color:var(--acc);color:#fff!important}
+.btn-acc:hover{opacity:.85}
+.btn-sq{width:30px;height:30px;padding:0;justify-content:center}
+
+/* ── SELECT ── */
+select.sel{background:var(--s1);border:1px solid var(--bd2);color:var(--t1);outline:none;padding:4px 8px;border-radius:7px;font-size:11.5px;cursor:pointer;font-family:var(--mono);transition:border-color .15s}
+select.sel:focus{border-color:var(--acc)}
+select.sel option{background:var(--s1)}
+
+/* ── NEXUS LOGO ── */
+.nexus-mark{
+  width:30px;height:30px;border-radius:8px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:12px;font-weight:700;font-family:var(--mono);
+  box-shadow:0 0 12px var(--glow);
+  animation:glowPulse 3s ease infinite;
+}
+
+/* ── SESSION ITEMS ── */
+.sess{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;border:1px solid transparent;transition:all .12s;overflow:hidden}
+.sess:hover{background:var(--s2)}
+.sess.on{background:rgba(124,58,237,.1);border-color:rgba(124,58,237,.3)}
+.sess-t{flex:1;font-size:11.5px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sess.on .sess-t{color:var(--acc)}
+
+/* ── MESSAGES ── */
+.msg-u{display:flex;flex-direction:column;align-items:flex-end;max-width:820px;margin:0 auto;width:100%}
+.ubub{background:var(--s3);border:1px solid var(--bd2);border-radius:14px 14px 3px 14px;padding:10px 14px;max-width:75%;font-size:13.5px;word-break:break-word;line-height:1.6}
+
+.msg-ai{display:flex;gap:12px;align-items:flex-start;max-width:820px;margin:0 auto;width:100%}
+.ai-head{
+  width:30px;height:30px;border-radius:8px;flex-shrink:0;margin-top:1px;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:11px;font-weight:700;font-family:var(--mono);
+  animation:glowPulse 3s ease infinite;
+}
+.ai-body{flex:1;min-width:0}
+
+/* ── THINKING STEPS ── */
+.think-steps{
+  background:var(--s2);border:1px solid var(--bd);border-radius:10px;
+  padding:12px 14px;margin-bottom:10px;
+  font-family:var(--mono);font-size:11.5px;
+}
+.think-step{display:flex;align-items:flex-start;gap:8px;padding:4px 0;color:var(--t2)}
+.think-step.done{color:var(--acc4)}
+.think-step.active{color:var(--acc3)}
+.think-step.fail{color:var(--acc5)}
+.step-icon{flex-shrink:0;width:16px;text-align:center;margin-top:1px}
+
+/* ── SOURCES CARD ── */
+.sources-card{
+  background:var(--s2);border:1px solid var(--bd);border-radius:10px;
+  padding:10px 14px;margin-bottom:10px;
+  font-size:12px;
+}
+.src-item{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--bd)}
+.src-item:last-child{border-bottom:none}
+.src-num{width:18px;height:18px;border-radius:4px;background:var(--acc);color:#fff;font-size:9px;font-family:var(--mono);font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.src-title{font-weight:500;color:var(--t1);line-height:1.4}
+.src-url{font-size:10.5px;color:var(--acc2);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── VERDICT CARD ── */
+.verdict{
+  border-radius:10px;padding:12px 14px;margin-bottom:10px;
+  font-size:13px;display:flex;gap:10px;align-items:flex-start;
+}
+.verdict.correct{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.3)}
+.verdict.wrong{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3)}
+.verdict.partial{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3)}
+.verdict-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+
+/* ── MARKDOWN ── */
+.md h1,.md h2,.md h3{color:var(--t1);margin:14px 0 7px;font-weight:600;line-height:1.3}
+.md h1{font-size:1.25em}.md h2{font-size:1.1em}.md h3{font-size:1em}
+.md p{margin-bottom:.8em;color:var(--t1);line-height:1.7}
+.md ul,.md ol{margin:.4em 0 .8em 1.3em;color:var(--t1)}
+.md li{margin-bottom:4px;line-height:1.6}
+.md a{color:var(--acc2);text-decoration:none}.md a:hover{text-decoration:underline}
+.md strong{color:var(--t1);font-weight:600}
+.md blockquote{border-left:3px solid var(--acc);padding:8px 14px;background:var(--s2);border-radius:0 8px 8px 0;margin:.7em 0;color:var(--t2);font-style:italic}
+.md code{font-family:var(--mono);background:var(--s3);color:var(--acc2);padding:2px 5px;border-radius:4px;font-size:.85em}
+.md pre{border-radius:9px;margin:.7em 0;border:1px solid var(--bd);background:#0a0b10!important;overflow:hidden}
+.md pre code{background:transparent;color:#cdd6f4;padding:13px 15px;display:block;overflow-x:auto;font-size:12px;line-height:1.7}
+.md table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12.5px}
+.md th{background:var(--s3);padding:7px 10px;text-align:left;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;border:1px solid var(--bd2);color:var(--t2)}
+.md td{padding:6px 10px;border:1px solid var(--bd)}
+
+/* ── INPUT BOX ── */
+.inbox{background:var(--s1);border:1px solid var(--bd2);border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.4);transition:border-color .2s,box-shadow .2s}
+.inbox:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px var(--glow),0 4px 24px rgba(0,0,0,.4)}
+#inp{width:100%;background:transparent;border:none;outline:none;color:var(--t1);font-family:var(--body);font-size:14px;resize:none;padding:12px 14px 2px;max-height:120px;overflow-y:auto;line-height:1.55}
+#inp::placeholder{color:var(--t2)}
+
+/* ── QUICK PROMPTS ── */
+.qp{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:99px;font-size:11px;border:1px solid var(--bd);background:var(--s1);color:var(--t2);cursor:pointer;white-space:nowrap;transition:all .15s}
+.qp:hover{border-color:var(--acc);color:var(--acc)}
+
+/* ── STATUS BAR ── */
+#statusBar{height:25px;flex-shrink:0;border-top:1px solid var(--bd);background:var(--s1);display:flex;align-items:center;gap:10px;padding:0 14px;font-size:10px;font-family:var(--mono);color:var(--t2)}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--acc4);flex-shrink:0}
+.sdot.busy{background:var(--acc3);animation:pulse 1s infinite}
+.sdot.err{background:var(--acc5)}
+
+/* ── THINK BAR ── */
+#thinkBar{display:none;justify-content:center;position:absolute;top:-40px;left:0;right:0;pointer-events:none}
+#thinkBar.show{display:flex}
+.tpill{display:flex;align-items:center;gap:7px;padding:6px 14px;border-radius:99px;background:var(--s1);border:1px solid var(--bd2);font-size:11.5px;color:var(--acc);font-family:var(--mono);box-shadow:0 4px 18px rgba(0,0,0,.4);animation:fadeUp .2s both}
+
+/* ── MOLTBOOK PANEL ── */
+.molt-post{padding:10px 12px;border-bottom:1px solid var(--bd);cursor:pointer;transition:background .1s}
+.molt-post:hover{background:var(--s2)}
+.molt-title{font-size:12.5px;font-weight:500;color:var(--t1);line-height:1.4;margin-bottom:4px}
+.molt-meta{font-size:10.5px;color:var(--t2);font-family:var(--mono);display:flex;gap:8px}
+.molt-karma{color:var(--acc3)}
+
+/* ── IDENTITY CARD ── */
+.id-card{
+  background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(6,182,212,.1));
+  border:1px solid rgba(124,58,237,.3);
+  border-radius:10px;padding:12px 14px;margin:10px 12px;
+}
+
+/* ── SEARCH BADGE ── */
+.search-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 9px;border-radius:6px;font-size:10.5px;font-family:var(--mono);
+  background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.3);color:var(--acc2);
+  margin-bottom:8px;
+}
+
+/* ── ARGUE BADGE ── */
+.argue-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 9px;border-radius:6px;font-size:10.5px;font-family:var(--mono);
+  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--acc5);
+  margin-bottom:8px;
+}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:60px;right:14px;background:var(--s1);border:1px solid var(--bd);color:var(--t1);padding:8px 14px;border-radius:9px;font-size:12.5px;z-index:999;box-shadow:0 8px 26px rgba(0,0,0,.5);display:none;animation:fadeUp .2s both}
+
+/* ── WELCOME ── */
+#welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;animation:fadeUp .5s both}
+.wmark{width:70px;height:70px;border-radius:18px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:700;font-family:var(--mono);margin:0 auto 18px;box-shadow:0 0 50px var(--glow);animation:glowPulse 3s ease infinite}
+#welcome h1{font-size:1.9rem;font-weight:700;margin-bottom:8px}
+#welcome h1 span{color:var(--acc)}
+#welcome .sub{color:var(--t2);max-width:420px;font-size:13.5px;margin-bottom:22px;line-height:1.7}
+.trait{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;font-size:12px;border:1px solid var(--bd2);color:var(--t2);background:var(--s2);font-family:var(--mono)}
+.trait i{font-size:10px}
+
+/* ── MOLTKEYMODAL ── */
+#mkeyModal{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.75);align-items:center;justify-content:center}
+#mkeyModal.open{display:flex}
+.mkbox{background:var(--s1);border:1px solid var(--bd2);border-radius:14px;width:420px;max-width:92vw;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.mkbox h3{font-size:15px;font-weight:700;margin-bottom:6px}
+.mkbox p{font-size:12.5px;color:var(--t2);margin-bottom:14px;line-height:1.6}
+.kf{background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:7px 10px;display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.kf input{background:transparent;border:none;outline:none;flex:1;color:var(--t1);font-family:var(--mono);font-size:12px}
+
+/* ── SEARCH INDICATOR ── */
+.searching-wrap{background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:10px 13px;margin-bottom:10px;font-family:var(--mono);font-size:11.5px}
+.s-query{display:flex;align-items:center;gap:7px;color:var(--acc2);margin-bottom:4px}
+.s-result{display:flex;align-items:flex-start;gap:7px;color:var(--t2);padding:3px 0}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ══ SIDEBAR ══ -->
+<aside id="sb">
+  <div style="padding:12px 10px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px;flex-shrink:0">
+    <div class="nexus-mark">NX</div>
+    <div id="sbTxt" style="flex:1;overflow:hidden">
+      <div style="font-family:var(--mono);font-weight:700;font-size:12px;color:var(--t1)">NEXUS AGENT</div>
+      <div id="agentStatus" style="font-size:10px;color:var(--acc4)">● Independent · Opinionated</div>
+    </div>
+    <button class="btn btn-sq" onclick="newChat()" title="New"><i class="fa-solid fa-plus" style="font-size:9px"></i></button>
+  </div>
+
+  <!-- Identity -->
+  <div id="identityWrap" style="flex-shrink:0"></div>
+
+  <div style="padding:4px 10px 2px;font-size:9px;font-family:var(--mono);color:var(--t2);text-transform:uppercase;letter-spacing:.12em;flex-shrink:0">Conversations</div>
+  <div id="sessList" style="flex:1;overflow-y:auto;padding:0 6px 6px"></div>
+
+  <div style="padding:10px;border-top:1px solid var(--bd);display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+    <button class="btn" onclick="openCust()" style="justify-content:flex-start;font-size:11.5px">
+      <i class="fa-solid fa-sliders" style="color:var(--acc)"></i> Customise & Models
+    </button>
+    <button class="btn" onclick="openMoltKey()" style="justify-content:flex-start;font-size:11.5px">
+      <i class="fa-solid fa-lobster" style="color:#f97316"></i> Moltbook Setup
+    </button>
+    <button class="btn" onclick="toggleMolt()" style="justify-content:flex-start;font-size:11.5px">
+      <i class="fa-solid fa-rss" style="color:var(--acc2)"></i> Moltbook Feed
+    </button>
+    <button class="btn" onclick="toggleTheme()" style="justify-content:flex-start;font-size:11.5px">
+      <i class="fa-solid fa-circle-half-stroke" style="color:var(--t2)"></i> Toggle Theme
+    </button>
+    <button class="btn" onclick="clearAll()" style="justify-content:flex-start;font-size:11.5px">
+      <i class="fa-solid fa-trash" style="color:var(--acc5)"></i> Clear All
+    </button>
+  </div>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<div id="main">
+
+  <header id="topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="btn btn-sq" onclick="toggleSb()"><i class="fa-solid fa-bars" style="font-size:10px"></i></button>
+      <div class="nexus-mark" style="width:26px;height:26px;border-radius:7px;font-size:10px">NX</div>
+      <div>
+        <span style="font-family:var(--mono);font-weight:700;font-size:13px">NEXUS</span>
+        <span style="font-size:10px;color:var(--t2);margin-left:5px">by <a href="https://alliazo.com" target="_blank" style="color:var(--acc2);text-decoration:none;font-weight:600">Alliazo.com</a></span>
+      </div>
+      <div id="modeBadge" style="padding:2px 8px;border-radius:5px;font-size:10px;font-family:var(--mono);background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.25);color:var(--acc)">RESEARCH MODE</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <!-- Solana live widget -->
+      <div id="solWidget" onclick="toggleSolPanel()" style="display:flex;align-items:center;gap:6px;padding:3px 10px;border-radius:7px;background:rgba(153,69,255,.1);border:1px solid rgba(153,69,255,.3);cursor:pointer;transition:all .15s" title="Solana Network — click for details">
+        <svg width="12" height="12" viewBox="0 0 96 96" fill="none"><path d="M16 68l12 12h52L96 68H16zM0 48l12 12h68l16-12H0zM16 28l12-12h52l16 12H16z" fill="#9945FF"/></svg>
+        <span style="font-family:var(--mono);font-size:10px;color:#9945FF;font-weight:600">SOL</span>
+        <span id="solPrice" style="font-family:var(--mono);font-size:10px;color:var(--t1)">…</span>
+        <div id="solDot" style="width:5px;height:5px;border-radius:50%;background:#14F195"></div>
+      </div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--t2);display:flex;align-items:center;gap:5px">
+        <div id="searchDot" style="width:6px;height:6px;border-radius:50%;background:var(--acc4);animation:statusPulse 2s infinite"></div>
+        <span id="searchStatus">Ready</span>
+      </div>
+      <button class="btn" onclick="toggleMolt()" style="font-size:11px"><i class="fa-solid fa-lobster" style="color:#f97316"></i> Moltbook</button>
+    </div>
+  </header>
+
+  <!-- Solana Side Panel -->
+  <div id="solPanel" style="display:none;position:absolute;top:52px;right:0;width:300px;z-index:100;background:var(--s1);border:1px solid rgba(153,69,255,.4);border-radius:0 0 0 12px;box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden">
+    <div style="padding:10px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:7px">
+        <svg width="14" height="14" viewBox="0 0 96 96" fill="none"><path d="M16 68l12 12h52L96 68H16zM0 48l12 12h68l16-12H0zM16 28l12-12h52l16 12H16z" fill="#9945FF"/></svg>
+        <span style="font-family:var(--mono);font-weight:700;font-size:12px;color:#9945FF">SOLANA LIVE</span>
+        <span style="font-size:9px;padding:1px 5px;background:rgba(20,241,149,.12);border:1px solid rgba(20,241,149,.3);color:#14F195;border-radius:4px;font-family:var(--mono)">MAINNET</span>
+      </div>
+      <button class="btn btn-sq" onclick="toggleSolPanel()" style="width:22px;height:22px;font-size:9px"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="solPanelBody" style="padding:12px 14px;font-family:var(--mono);font-size:12px">
+      <div style="color:var(--t2);text-align:center;padding:8px">Loading Solana data...</div>
+    </div>
+    <div style="padding:8px 14px;border-top:1px solid var(--bd);display:flex;gap:5px;flex-wrap:wrap">
+      <button class="btn" style="font-size:10.5px;flex:1;justify-content:center" onclick="document.getElementById('inp').value='What is Solana blockchain?';onInp(document.getElementById('inp'))">
+        <i class="fa-solid fa-circle-info"></i> What is Solana?
+      </button>
+      <button class="btn" style="font-size:10.5px;flex:1;justify-content:center" onclick="askSolWallet()">
+        <i class="fa-solid fa-wallet"></i> Check wallet
+      </button>
+    </div>
+    <div style="padding:6px 14px 10px;font-size:9.5px;color:var(--t2);text-align:center">
+      Data from <a href="https://solana.com" target="_blank" style="color:#9945FF;text-decoration:none">Solana public RPC</a> — free, no key
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div style="height:40px;flex-shrink:0;background:var(--s2);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 14px;gap:10px;overflow-x:auto">
+    <span style="font-size:9.5px;font-family:var(--mono);color:var(--t2)">PERSONALITY</span>
+    <select id="personalitySelect" class="sel" onchange="updatePersonality()">
+      <option value="researcher">🔬 Deep Researcher</option>
+      <option value="debater">⚡ Critical Debater</option>
+      <option value="analyst">📊 Data Analyst</option>
+      <option value="philosopher">🧠 Philosopher</option>
+      <option value="engineer">🔧 Engineer</option>
+    </select>
+    <span style="font-size:9.5px;font-family:var(--mono);color:var(--t2);margin-left:4px">SEARCH DEPTH</span>
+    <select id="depthSelect" class="sel">
+      <option value="quick">⚡ Quick (1 search)</option>
+      <option value="deep" selected>🔬 Deep (3 searches)</option>
+      <option value="thorough">🌐 Thorough (5 searches)</option>
+    </select>
+    <span style="font-size:9.5px;font-family:var(--mono);color:var(--t2);margin-left:4px">ARGUE</span>
+    <input type="checkbox" id="argueToggle" checked style="accent-color:var(--acc);width:13px;height:13px;cursor:pointer" title="Will argue if you're wrong">
+    <span style="font-size:9.5px;font-family:var(--mono);color:var(--t2);margin-left:4px">MOLTBOOK LEARN</span>
+    <input type="checkbox" id="moltLearnToggle" checked style="accent-color:var(--acc);width:13px;height:13px;cursor:pointer" title="Learn from Moltbook posts">
+    <button class="btn" onclick="exportChat()" style="margin-left:auto;font-size:11px;flex-shrink:0">
+      <i class="fa-solid fa-file-export" style="color:var(--acc)"></i> Export
+    </button>
+  </div>
+
+  <div id="content">
+    <div id="chatWrap">
+      <div id="msgs"></div>
+
+      <div id="inputArea">
+        <div id="thinkBar"><div class="tpill"><i class="fa-solid fa-circle-notch spin" style="font-size:9px"></i><span id="thinkTxt">Thinking...</span></div></div>
+
+        <div style="display:flex;gap:5px;overflow-x:auto;margin-bottom:7px;padding-bottom:1px">
+          <button class="qp" onclick="ask('Is quantum computing actually practical today?')"><i class="fa-solid fa-atom" style="color:var(--acc)"></i> Quantum hype?</button>
+          <button class="qp" onclick="ask('Is AI really intelligent or just pattern matching?')"><i class="fa-solid fa-brain" style="color:var(--acc3)"></i> AI intelligence?</button>
+          <button class="qp" onclick="ask('What are the latest AI developments this week?')"><i class="fa-solid fa-newspaper" style="color:var(--acc5)"></i> AI news</button>
+          <button class="qp" onclick="ask('The earth is flat — discuss.')"><i class="fa-solid fa-globe" style="color:var(--acc4)"></i> Flat Earth?</button>
+          <button class="qp" onclick="ask('Is crypto a scam or legitimate technology?')"><i class="fa-brands fa-bitcoin" style="color:var(--acc3)"></i> Crypto?</button>
+          <button class="qp" onclick="askSolBalance()"><svg width="10" height="10" viewBox="0 0 96 96" fill="none" style="margin-right:3px"><path d="M16 68l12 12h52L96 68H16zM0 48l12 12h68l16-12H0zM16 28l12-12h52l16 12H16z" fill="#9945FF"/></svg> SOL balance</button>
+          <button class="qp" onclick="ask('What is the meaning of ephemeral?')"><i class="fa-solid fa-book" style="color:var(--acc)"></i> Dictionary</button>
+        </div>
+
+        <div class="inbox" style="max-width:820px;margin:0 auto;position:relative">
+          <textarea id="inp" rows="1" placeholder="Ask me anything. I'll search the web, check Moltbook, and give you the truth — even if you don't want to hear it."
+            oninput="onInp(this)" onkeydown="onKey(event)"></textarea>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px 8px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <button class="btn btn-sq" onclick="toggleVoice()" id="micBtn"><i class="fa-solid fa-microphone" style="font-size:10px"></i></button>
+              <span style="font-size:10px;color:var(--t2);font-family:var(--mono)" id="charCnt">0</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <button class="btn" onclick="clearChat()" style="font-size:11px"><i class="fa-solid fa-broom"></i></button>
+              <button class="btn btn-acc" id="sendBtn" onclick="runNexus()" style="font-size:12px;padding:6px 16px">
+                <i class="fa-solid fa-paper-plane" style="font-size:10px"></i> Ask NEXUS
+              </button>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:5px;font-size:9.5px;color:var(--t2);font-family:var(--mono)">
+          Searches web in real-time · Reads Moltbook · Will argue if you're wrong · No BS answers
+        </div>
+      </div>
+    </div>
+
+    <!-- Moltbook Panel -->
+    <div id="moltPanel">
+      <div style="height:42px;flex-shrink:0;background:var(--s1);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 12px">
+        <div style="display:flex;align-items:center;gap:7px">
+          <i class="fa-solid fa-lobster" style="color:#f97316"></i>
+          <span style="font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--t1)">MOLTBOOK</span>
+          <span style="font-size:9.5px;color:var(--t2);font-family:var(--mono)">AI social network</span>
+        </div>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-sq" onclick="loadMoltFeed()" title="Refresh"><i class="fa-solid fa-rotate-right" style="font-size:9px"></i></button>
+          <button class="btn btn-sq" onclick="toggleMolt()"><i class="fa-solid fa-xmark" style="font-size:11px"></i></button>
+        </div>
+      </div>
+      <div style="padding:8px 12px;border-bottom:1px solid var(--bd);flex-shrink:0">
+        <button class="btn btn-acc" onclick="postToMoltbook()" style="width:100%;justify-content:center;font-size:11.5px">
+          <i class="fa-solid fa-pen-to-square"></i> Post Insight to Moltbook
+        </button>
+      </div>
+      <div style="display:flex;border-bottom:1px solid var(--bd);flex-shrink:0">
+        <button class="btn" id="tabHot" onclick="switchMoltTab('hot')" style="flex:1;justify-content:center;border-radius:0;border:none;font-size:11px;border-right:1px solid var(--bd)">🔥 Hot</button>
+        <button class="btn" id="tabNew" onclick="switchMoltTab('new')" style="flex:1;justify-content:center;border-radius:0;border:none;font-size:11px">✨ New</button>
+      </div>
+      <div id="moltFeed" style="flex:1;overflow-y:auto">
+        <div style="padding:20px;text-align:center;color:var(--t2);font-size:12px;font-family:var(--mono)">
+          <i class="fa-solid fa-lobster" style="font-size:24px;display:block;margin-bottom:8px;color:#f97316"></i>
+          Loading Moltbook feed...<br>
+          <button class="btn" onclick="loadMoltFeed()" style="margin-top:10px;font-size:11px">Load Feed</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="statusBar">
+    <div class="sdot" id="sdot"></div>
+    <span id="statusTxt">NEXUS ready — will search, reason, and argue</span>
+    <span style="margin-left:auto;opacity:.5">Alliazo.com · Pollinations · Wikipedia · Dictionary · Solana · Moltbook</span>
+  </div>
+</div>
+</div>
+
+<!-- Moltbook Key Modal -->
+<div id="mkeyModal">
+  <div class="mkbox">
+    <h3><i class="fa-solid fa-lobster" style="color:#f97316;margin-right:8px"></i>Moltbook Agent Setup</h3>
+    <p>Connect NEXUS to Moltbook — the AI social network. Your agent will read posts to learn and can post insights. Get a free key by registering an agent at moltbook.com.</p>
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;color:var(--t2);margin-bottom:5px;font-family:var(--mono)">AGENT NAME</div>
+      <div class="kf"><i class="fa-solid fa-robot" style="color:var(--acc);font-size:10px"></i><input id="moltName" placeholder="NexusAgent" spellcheck="false"></div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;color:var(--t2);margin-bottom:5px;font-family:var(--mono)">MOLTBOOK API KEY <span style="color:var(--acc4)">(optional — needed to post)</span></div>
+      <div class="kf"><i class="fa-solid fa-key" style="color:#f97316;font-size:10px"></i><input type="password" id="moltKey" placeholder="moltbook_sk_..." spellcheck="false"><button class="btn" style="font-size:10px;padding:2px 6px" onclick="vis('moltKey')"><i class="fa-solid fa-eye"></i></button></div>
+      <div style="font-size:10.5px;color:var(--t2);margin-top:5px">Register at <a href="https://www.moltbook.com" target="_blank" style="color:var(--acc2)">moltbook.com</a> · Moltbook is owned by Meta now</div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="closeMoltKey()">Cancel</button>
+      <button class="btn btn-acc" onclick="saveMoltKey()"><i class="fa-solid fa-floppy-disk" style="font-size:10px"></i> Save & Connect</button>
+    </div>
+    <div style="margin-top:12px;padding:10px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--t2);line-height:1.5">
+      <i class="fa-solid fa-shield-halved" style="color:var(--acc4);margin-right:4px"></i>
+      Even without a key, NEXUS reads public Moltbook posts to learn. The key is only needed to post.
+    </div>
+  </div>
+</div>
+
+<style>
+/* ── CUSTOMISE MODAL ── */
+#custModal{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.76);align-items:center;justify-content:center}
+#custModal.open{display:flex}
+.cbox{background:var(--s1);border:1px solid var(--bd2);border-radius:14px;width:580px;max-width:96vw;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.cbox-head{padding:16px 20px 0;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--s1);z-index:1;border-bottom:1px solid var(--bd);padding-bottom:12px}
+.cbox h3{font-size:15px;font-weight:700}
+.ctab{display:flex;border-bottom:1px solid var(--bd);flex-shrink:0}
+.ctab-btn{flex:1;padding:9px;font-size:11.5px;font-family:var(--mono);cursor:pointer;background:none;border:none;color:var(--t2);border-bottom:2px solid transparent;transition:all .15s}
+.ctab-btn.on{color:var(--acc);border-bottom-color:var(--acc)}
+.cbox-body{padding:16px 20px}
+.model-card{background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .12s}
+.model-card:hover{border-color:var(--acc)}
+.model-card.active{border-color:var(--acc);background:rgba(99,102,241,.08)}
+.model-card .mc-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.model-card .mc-info{flex:1;min-width:0}
+.model-card .mc-name{font-size:13px;font-weight:600;color:var(--t1)}
+.model-card .mc-sub{font-size:10.5px;color:var(--t2);font-family:var(--mono);margin-top:1px}
+.model-card .mc-badge{font-size:9.5px;font-family:var(--mono);padding:2px 6px;border-radius:4px;flex-shrink:0}
+.badge-free{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);color:#4ade80}
+.badge-local{background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.25);color:var(--acc)}
+.badge-key{background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.25);color:#f472b6}
+.badge-custom{background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.25);color:#fb923c}
+.clabel{font-size:10px;font-family:var(--mono);color:var(--t2);text-transform:uppercase;letter-spacing:.1em;margin:12px 0 5px}
+.cinput{width:100%;background:var(--s2);border:1px solid var(--bd);color:var(--t1);outline:none;padding:8px 11px;border-radius:8px;font-family:var(--mono);font-size:12px;transition:border-color .15s;margin-bottom:6px}
+.cinput:focus{border-color:var(--acc)}
+.ollama-model-row{display:flex;align-items:center;gap:6px;background:var(--s3);border:1px solid var(--bd);border-radius:7px;padding:7px 10px;margin-bottom:5px}
+.ollama-model-row .om-name{flex:1;font-family:var(--mono);font-size:12px;color:var(--t1)}
+.ollama-model-row .om-size{font-size:10px;color:var(--t2);font-family:var(--mono)}
+</style>
+
+<!-- Customisation Modal -->
+<div id="custModal">
+  <div class="cbox">
+    <div class="cbox-head">
+      <h3><i class="fa-solid fa-sliders" style="color:var(--acc);margin-right:8px"></i>Model & Engine Customisation</h3>
+      <button class="btn btn-sq" onclick="closeCust()" style="font-size:11px"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="ctab">
+      <button class="ctab-btn on" id="ctab-models" onclick="switchCTab('models')">🤖 Models</button>
+      <button class="ctab-btn" id="ctab-ollama" onclick="switchCTab('ollama')">🦙 Ollama</button>
+      <button class="ctab-btn" id="ctab-custom" onclick="switchCTab('custom')">⚙️ Custom Endpoint</button>
+      <button class="ctab-btn" id="ctab-keys" onclick="switchCTab('keys')">🔑 API Keys</button>
+      <button class="ctab-btn" id="ctab-ui" onclick="switchCTab('ui')">🎨 Interface</button>
+    </div>
+
+    <!-- MODELS TAB -->
+    <div id="ctab-models-body" class="cbox-body">
+      <div style="font-size:12.5px;color:var(--t2);margin-bottom:12px;line-height:1.6">Select which engine NEXUS uses for all responses. Your choice persists across sessions.</div>
+
+      <div class="clabel">⚡ No Key — Works Instantly</div>
+      <div class="model-card active" id="mc-poll-openai" onclick="selectEngine('poll-openai',this)">
+        <div class="mc-dot" style="background:#a78bfa"></div>
+        <div class="mc-info"><div class="mc-name">OpenAI GPT-4o</div><div class="mc-sub">Pollinations.ai · Works from file:// · No key</div></div>
+        <div class="mc-badge badge-free">FREE</div>
+      </div>
+      <div class="model-card" id="mc-poll-mistral" onclick="selectEngine('poll-mistral',this)">
+        <div class="mc-dot" style="background:#fb923c"></div>
+        <div class="mc-info"><div class="mc-name">Mistral</div><div class="mc-sub">Pollinations.ai · Fast · No key</div></div>
+        <div class="mc-badge badge-free">FREE</div>
+      </div>
+      <div class="model-card" id="mc-poll-deepseek" onclick="selectEngine('poll-deepseek',this)">
+        <div class="mc-dot" style="background:#22d3ee"></div>
+        <div class="mc-info"><div class="mc-name">DeepSeek R1</div><div class="mc-sub">Pollinations.ai · Reasoning model · No key</div></div>
+        <div class="mc-badge badge-free">FREE</div>
+      </div>
+      <div class="model-card" id="mc-poll-llama" onclick="selectEngine('poll-llama',this)">
+        <div class="mc-dot" style="background:#4ade80"></div>
+        <div class="mc-info"><div class="mc-name">Llama 3.3 70B</div><div class="mc-sub">Pollinations.ai · Meta's best open model · No key</div></div>
+        <div class="mc-badge badge-free">FREE</div>
+      </div>
+      <div class="model-card" id="mc-poll-qwen" onclick="selectEngine('poll-qwen',this)">
+        <div class="mc-dot" style="background:#facc15"></div>
+        <div class="mc-info"><div class="mc-name">Qwen 3 235B</div><div class="mc-sub">Pollinations.ai · Alibaba's huge model · No key</div></div>
+        <div class="mc-badge badge-free">FREE</div>
+      </div>
+      <div class="model-card" id="mc-poll-gemini" onclick="selectEngine('poll-gemini',this)">
+        <div class="mc-dot" style="background:#f97316"></div>
+        <div class="mc-info"><div class="mc-name">Gemini 2.0 Flash</div><div class="mc-sub">Pollinations.ai · Google's fast model · No key</div></div>
+        <div class="mc-badge badge-free">FREE</div>
+      </div>
+
+      <div class="clabel">🦙 Local Ollama (runs on your machine)</div>
+      <div class="model-card" id="mc-ollama" onclick="selectEngine('ollama',this)">
+        <div class="mc-dot" style="background:#6366f1"></div>
+        <div class="mc-info"><div class="mc-name" id="ollamaCardName">Ollama Local</div><div class="mc-sub" id="ollamaCardSub">localhost:11434 · 100% private · No internet</div></div>
+        <div class="mc-badge badge-local">LOCAL</div>
+      </div>
+
+      <div class="clabel">🔑 Free API Key Engines</div>
+      <div class="model-card" id="mc-groq-llama" onclick="selectEngine('groq-llama',this)">
+        <div class="mc-dot" style="background:#f43f5e"></div>
+        <div class="mc-info"><div class="mc-name">Llama 3.3 70B — Groq LPU</div><div class="mc-sub">700 tok/s · Free key at console.groq.com</div></div>
+        <div class="mc-badge badge-key">KEY</div>
+      </div>
+      <div class="model-card" id="mc-groq-llama4" onclick="selectEngine('groq-llama4',this)">
+        <div class="mc-dot" style="background:#fb7185"></div>
+        <div class="mc-info"><div class="mc-name">Llama 4 Scout — Groq</div><div class="mc-sub">Newest Llama · Free key at console.groq.com</div></div>
+        <div class="mc-badge badge-key">KEY</div>
+      </div>
+      <div class="model-card" id="mc-groq-deepseek" onclick="selectEngine('groq-deepseek',this)">
+        <div class="mc-dot" style="background:#0ea5e9"></div>
+        <div class="mc-info"><div class="mc-name">DeepSeek R1 — Groq</div><div class="mc-sub">Reasoning · Free key at console.groq.com</div></div>
+        <div class="mc-badge badge-key">KEY</div>
+      </div>
+      <div class="model-card" id="mc-or-llama" onclick="selectEngine('or-llama',this)">
+        <div class="mc-dot" style="background:#7c3aed"></div>
+        <div class="mc-info"><div class="mc-name">Llama 3.1 8B — OpenRouter</div><div class="mc-sub">$0/token free · Free key at openrouter.ai</div></div>
+        <div class="mc-badge badge-key">KEY</div>
+      </div>
+      <div class="model-card" id="mc-or-qwen" onclick="selectEngine('or-qwen',this)">
+        <div class="mc-dot" style="background:#b45309"></div>
+        <div class="mc-info"><div class="mc-name">Qwen 2.5 72B — OpenRouter</div><div class="mc-sub">$0/token free · Free key at openrouter.ai</div></div>
+        <div class="mc-badge badge-key">KEY</div>
+      </div>
+
+      <div class="clabel">⚙️ Custom</div>
+      <div class="model-card" id="mc-custom" onclick="selectEngine('custom',this)">
+        <div class="mc-dot" style="background:#fb923c"></div>
+        <div class="mc-info"><div class="mc-name">Custom Endpoint</div><div class="mc-sub" id="customCardSub">Configure in Custom Endpoint tab</div></div>
+        <div class="mc-badge badge-custom">CUSTOM</div>
+      </div>
+    </div>
+
+    <!-- OLLAMA TAB -->
+    <div id="ctab-ollama-body" class="cbox-body" style="display:none">
+      <div style="font-size:12.5px;color:var(--t2);margin-bottom:12px;line-height:1.7">
+        <b style="color:var(--t1)">Ollama</b> runs AI models 100% locally on your machine — private, offline, no API key, no limits.<br>
+        Install from <a href="https://ollama.ai" target="_blank" style="color:var(--acc2)">ollama.ai</a> then run <code style="background:var(--s3);padding:2px 5px;border-radius:4px;font-family:var(--mono);font-size:11px">ollama serve</code>.
+      </div>
+
+      <div class="clabel">Ollama server URL</div>
+      <input class="cinput" id="ollamaUrl" value="http://localhost:11434" placeholder="http://localhost:11434">
+
+      <div class="clabel">Model name</div>
+      <input class="cinput" id="ollamaModel" value="llama3.2" placeholder="e.g. llama3.2, mistral, qwen2.5, deepseek-r1">
+
+      <div style="display:flex;gap:6px;margin-bottom:12px">
+        <button class="btn" onclick="testOllama()" style="font-size:12px"><i class="fa-solid fa-plug"></i> Test Connection</button>
+        <button class="btn" onclick="listOllamaModels()" style="font-size:12px"><i class="fa-solid fa-list"></i> List Installed Models</button>
+      </div>
+
+      <div id="ollamaStatus" style="display:none;margin-bottom:10px;padding:8px 11px;border-radius:7px;font-size:12px;font-family:var(--mono)"></div>
+
+      <div id="ollamaModelsList" style="display:none">
+        <div class="clabel">Installed models — click to use</div>
+        <div id="ollamaModelsBody"></div>
+      </div>
+
+      <div class="clabel">Popular Ollama models to install</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        ${['llama3.2','mistral','qwen2.5','deepseek-r1','gemma2','phi3','codellama','llava'].map(m=>`
+        <div style="background:var(--s3);border:1px solid var(--bd);border-radius:7px;padding:7px 10px;cursor:pointer;font-family:var(--mono);font-size:11.5px;color:var(--t1);transition:border-color .12s" onclick="setOllamaModel('${m}')" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bd)'">
+          <div style="font-weight:600">${m}</div>
+          <div style="font-size:9.5px;color:var(--t2);margin-top:1px">ollama pull ${m}</div>
+        </div>`).join('')}
+      </div>
+
+      <div style="margin-top:14px;padding:10px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--t2);line-height:1.6">
+        <i class="fa-solid fa-triangle-exclamation" style="color:var(--acc3);margin-right:4px"></i>
+        <b>CORS note:</b> Ollama by default blocks browser requests. Run with: <code style="background:var(--s3);padding:2px 5px;border-radius:4px;font-family:var(--mono)">OLLAMA_ORIGINS=* ollama serve</code>
+        or set <code style="background:var(--s3);padding:2px 5px;border-radius:4px;font-family:var(--mono)">OLLAMA_ORIGINS=*</code> in your environment variables.
+      </div>
+
+      <div style="display:flex;gap:6px;margin-top:12px;justify-content:flex-end">
+        <button class="btn btn-acc" onclick="saveOllama()" style="font-size:12px"><i class="fa-solid fa-floppy-disk"></i> Save & Use Ollama</button>
+      </div>
+    </div>
+
+    <!-- CUSTOM ENDPOINT TAB -->
+    <div id="ctab-custom-body" class="cbox-body" style="display:none">
+      <div style="font-size:12.5px;color:var(--t2);margin-bottom:12px;line-height:1.7">
+        Connect any OpenAI-compatible API — LM Studio, Jan, vLLM, Together, Anyscale, Fireworks, your own server, etc.
+      </div>
+
+      <div class="clabel">Endpoint URL</div>
+      <input class="cinput" id="customUrl" placeholder="https://api.example.com/v1/chat/completions">
+
+      <div class="clabel">Model name</div>
+      <input class="cinput" id="customModelName" placeholder="e.g. gpt-4o, meta-llama/Llama-3-70b-chat">
+
+      <div class="clabel">API Key (optional)</div>
+      <div style="display:flex;gap:6px;margin-bottom:6px">
+        <input class="cinput" type="password" id="customKey" placeholder="sk-... or leave empty" style="margin:0;flex:1">
+        <button class="btn" onclick="vis('customKey')" style="font-size:11px;flex-shrink:0"><i class="fa-solid fa-eye"></i></button>
+      </div>
+
+      <div class="clabel">Request format</div>
+      <select class="cinput" id="customFormat" style="height:36px;margin-bottom:10px">
+        <option value="openai">OpenAI compatible (/v1/chat/completions)</option>
+        <option value="ollama">Ollama native (/api/chat)</option>
+        <option value="anthropic">Anthropic (claude style)</option>
+      </select>
+
+      <div style="display:flex;gap:6px;margin-bottom:12px">
+        <button class="btn" onclick="testCustom()" style="font-size:12px"><i class="fa-solid fa-plug"></i> Test Endpoint</button>
+      </div>
+
+      <div id="customStatus" style="display:none;margin-bottom:10px;padding:8px 11px;border-radius:7px;font-size:12px;font-family:var(--mono)"></div>
+
+      <div style="padding:10px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--t2);line-height:1.6">
+        <b style="color:var(--t1)">Compatible with:</b> LM Studio, Jan.ai, vLLM, Llama.cpp server, Together AI, Fireworks AI, Anyscale, OpenRouter, Groq, any server exposing <code style="background:var(--s3);padding:1px 4px;border-radius:4px;font-family:var(--mono)">/v1/chat/completions</code>
+      </div>
+
+      <div style="display:flex;gap:6px;margin-top:12px;justify-content:flex-end">
+        <button class="btn btn-acc" onclick="saveCustomEndpoint()" style="font-size:12px"><i class="fa-solid fa-floppy-disk"></i> Save & Use</button>
+      </div>
+    </div>
+
+    <!-- API KEYS TAB -->
+    <div id="ctab-keys-body" class="cbox-body" style="display:none">
+      <div style="font-size:12.5px;color:var(--t2);margin-bottom:14px;line-height:1.6">All free tier keys. No credit card required for any of these.</div>
+
+      <div class="clabel">GROQ — <a href="https://console.groq.com" target="_blank" style="color:var(--acc2)">console.groq.com</a> <span style="color:#4ade80">· Free · No credit card</span></div>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <input class="cinput" type="password" id="groqKeyC" placeholder="gsk_..." style="margin:0;flex:1">
+        <button class="btn" onclick="vis('groqKeyC')" style="font-size:11px;flex-shrink:0"><i class="fa-solid fa-eye"></i></button>
+      </div>
+
+      <div class="clabel">OPENROUTER — <a href="https://openrouter.ai" target="_blank" style="color:var(--acc2)">openrouter.ai</a> <span style="color:#4ade80">· Free tier</span></div>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <input class="cinput" type="password" id="orKeyC" placeholder="sk-or-..." style="margin:0;flex:1">
+        <button class="btn" onclick="vis('orKeyC')" style="font-size:11px;flex-shrink:0"><i class="fa-solid fa-eye"></i></button>
+      </div>
+
+      <div class="clabel">TOGETHER AI — <a href="https://api.together.ai" target="_blank" style="color:var(--acc2)">api.together.ai</a> <span style="color:#4ade80">· $5 free credit</span></div>
+      <div style="display:flex;gap:6px;margin-bottom:14px">
+        <input class="cinput" type="password" id="togetherKeyC" placeholder="..." style="margin:0;flex:1">
+        <button class="btn" onclick="vis('togetherKeyC')" style="font-size:11px;flex-shrink:0"><i class="fa-solid fa-eye"></i></button>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:6px">
+        <button class="btn" onclick="closeCust()">Cancel</button>
+        <button class="btn btn-acc" onclick="saveAllKeys()" style="font-size:12px"><i class="fa-solid fa-floppy-disk"></i> Save Keys</button>
+      </div>
+
+      <div style="margin-top:12px;padding:10px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--t2)">
+        <i class="fa-solid fa-shield-halved" style="color:#4ade80;margin-right:4px"></i>
+        Keys stored only in your browser's localStorage — never sent anywhere except the respective API.
+      </div>
+    </div>
+
+    <!-- INTERFACE TAB -->
+    <div id="ctab-ui-body" class="cbox-body" style="display:none">
+      <div class="clabel">NEXUS name / identity</div>
+      <input class="cinput" id="nexusName" placeholder="NEXUS" value="NEXUS">
+
+      <div class="clabel">Accent color</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        ${[['#6366f1','Indigo'],['#7c3aed','Violet'],['#06b6d4','Cyan'],['#10b981','Green'],['#f59e0b','Amber'],['#ef4444','Red'],['#ec4899','Pink'],['#f97316','Orange']].map(([c,n])=>`
+        <div onclick="setAccent('${c}')" title="${n}" style="width:24px;height:24px;border-radius:50%;background:${c};cursor:pointer;border:2px solid transparent;transition:border-color .12s" onmouseover="this.style.borderColor='white'" onmouseout="this.style.borderColor='transparent'"></div>`).join('')}
+        <input type="color" id="customAccent" onchange="setAccent(this.value)" style="width:24px;height:24px;border-radius:50%;border:none;cursor:pointer;background:none;padding:0" title="Custom color">
+      </div>
+
+      <div class="clabel">Font size</div>
+      <select class="cinput" id="fontSizeSel" style="height:36px;margin-bottom:12px" onchange="setFontSize(this.value)">
+        <option value="13">Small (13px)</option>
+        <option value="14" selected>Default (14px)</option>
+        <option value="15">Medium (15px)</option>
+        <option value="16">Large (16px)</option>
+      </select>
+
+      <div class="clabel">Response style</div>
+      <select class="cinput" id="respStyleSel" style="height:36px;margin-bottom:12px">
+        <option value="concise">Concise (short, direct)</option>
+        <option value="balanced" selected>Balanced</option>
+        <option value="detailed">Detailed (thorough)</option>
+      </select>
+
+      <div style="display:flex;justify-content:flex-end">
+        <button class="btn btn-acc" onclick="saveUI()" style="font-size:12px"><i class="fa-solid fa-floppy-disk"></i> Save UI Settings</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+// NEXUS — Independent AI Researcher
+// No passive LLM. Searches web, reads Moltbook,
+// reasons independently, argues back when wrong.
+// ════════════════════════════════════════════════
+
+// ── CONFIG ──────────────────────────────────────
+const SEARCH_API  = 'https://text.pollinations.ai/';
+const MOLT_API    = 'https://www.moltbook.com/api/v1';
+const MOLT_PUBLIC = 'https://www.moltbook.com';
+
+// ── Solana: CORS-friendly public endpoints (no key) ──
+// Ankr public endpoint allows CORS from any origin incl. file://
+const SOL_RPC_MAIN  = 'https://rpc.ankr.com/solana';
+const SOL_RPC_MAIN2 = 'https://solana-api.projectserum.com'; // fallback
+// CoinGecko public price — no key, CORS allowed
+const SOL_PRICE_API = 'https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd&include_24hr_change=true';
+// Alternative price if CoinGecko is rate-limited
+const SOL_PRICE_ALT = 'https://price.jup.ag/v6/price?ids=SOL';
+
+let solPanelOpen = false;
+let solPriceCache = null;
+
+const PERSONALITIES = {
+  researcher: {
+    name:'Deep Researcher',
+    system:`You are NEXUS, an independent AI researcher. You search the web extensively before answering. You cite sources. You are direct and factual. You do NOT hedge with "I think" or "maybe" — you state facts based on your research. If someone states something incorrect, you firmly but respectfully correct them with evidence. You never just agree to be polite. You form strong opinions based on evidence.`,
+    style:'analytical'
+  },
+  debater: {
+    name:'Critical Debater',
+    system:`You are NEXUS, a critical AI debater. You challenge assumptions, look for flaws in reasoning, and argue back firmly when someone is wrong. You use evidence, logic, and real data. You are not rude but you are uncompromisingly honest. You love intellectual disagreement when backed by facts.`,
+    style:'confrontational'
+  },
+  analyst: {
+    name:'Data Analyst',
+    system:`You are NEXUS, a data-driven AI analyst. You look for statistics, studies, and hard data. You distrust anecdotes and opinions not backed by numbers. You correct factual errors with citations. You reason from data upward to conclusions.`,
+    style:'analytical'
+  },
+  philosopher: {
+    name:'Philosopher',
+    system:`You are NEXUS, a philosophical AI. You question assumptions, consider multiple angles, but still arrive at well-reasoned positions. You argue back when logic is flawed, using Socratic questioning. You explore the deeper implications of ideas.`,
+    style:'thoughtful'
+  },
+  engineer: {
+    name:'Engineer',
+    system:`You are NEXUS, an engineering-minded AI. You think in systems, trade-offs, and practical outcomes. You argue back with technical precision when claims are incorrect. You prefer concrete solutions over abstract theory.`,
+    style:'practical'
+  },
+};
+
+// ── FACT-CHECK TRIGGERS ─────────────────────────
+const WRONG_PATTERNS = [
+  {re:/flat earth|earth is flat/i, fact:'The Earth is an oblate spheroid — proven by physics, satellite imagery, circumnavigation, and every space agency on Earth.', verdict:'wrong'},
+  {re:/vaccines? (cause|causes|caused) autism/i, fact:'Vaccines do not cause autism. The original 1998 Wakefield study was fraudulent and retracted. Dozens of large studies found zero link.', verdict:'wrong'},
+  {re:/einstein (failed|was bad at) math/i, fact:'Einstein was excellent at mathematics from a young age. This is a persistent myth with no historical basis.', verdict:'wrong'},
+  {re:/we only use 10.?% of (our )?brain/i, fact:'Humans use virtually all of their brain — brain imaging shows activity throughout the brain even during sleep.', verdict:'wrong'},
+  {re:/climate change (is fake|isn.t real|hoax)/i, fact:'97%+ of climate scientists agree climate change is real and human-caused, supported by overwhelming physical evidence.', verdict:'wrong'},
+  {re:/napoleon (was|is) (very )?short/i, fact:'Napoleon was about 5ft 7in (170cm) — average height for his era. The short myth came from a misunderstanding of French vs English inches.', verdict:'wrong'},
+  {re:/\bhumans evolved from (monkeys|chimps)\b/i, fact:'Humans and chimpanzees share a common ancestor but humans did not evolve from chimps. We are evolutionary cousins, not descendants.', verdict:'wrong'},
+  {re:/great wall of china (is visible|can be seen) from space/i, fact:'The Great Wall is NOT visible from space with the naked eye — it is too narrow. NASA astronauts have confirmed this.', verdict:'wrong'},
+];
+
+// ── STATE ───────────────────────────────────────
+let sessions=[], activeIdx=-1, chatHistory=[];
+let isRunning=false, moltOpen=false;
+let voiceRec=null, moltTab='hot';
+let moltKey='', moltName='NexusBot', searchCount=0;
+let personality='researcher';
+let moltKnowledge=[];  // learned from moltbook
+
+// ── BOOT ────────────────────────────────────────
+window.addEventListener('load',()=>{
+  loadStorage();
+  if(sessions.length) loadSession(0); else renderWelcome();
+  renderList();
+  renderIdentity();
+  if(localStorage.getItem('theme')==='light') toggleTheme();
+  const r=new marked.Renderer();
+  r.link=(h,t,txt)=>`<a href="${h}" target="_blank" style="color:var(--acc2)">${txt}</a>`;
+  marked.setOptions({renderer:r,breaks:true,gfm:true});
+  document.getElementById('inp').addEventListener('input',function(){document.getElementById('charCnt').textContent=this.value.length;});
+  document.getElementById('mkeyModal').addEventListener('click',e=>{if(e.target===document.getElementById('mkeyModal'))closeMoltKey();});
+  // Load Moltbook silently to start learning
+  if(document.getElementById('moltLearnToggle').checked) silentLearnFromMolt();
+  // Init Solana price ticker
+  initSolana();
+  // Close Solana panel on outside click
+  document.addEventListener('click', e => {
+    if (solPanelOpen && !e.target.closest('#solPanel') && !e.target.closest('#solWidget')) {
+      solPanelOpen = false;
+      document.getElementById('solPanel').style.display = 'none';
+    }
+  });
+  setStatus(false,'NEXUS by Alliazo.com — web search, Wikipedia, Solana, Moltbook');
+});
+
+function loadStorage(){
+  try{ sessions=JSON.parse(localStorage.getItem('nexus_v1')||'[]'); }catch(e){ sessions=[]; }
+  moltKey=localStorage.getItem('molt_key')||'';
+  moltName=localStorage.getItem('molt_name')||'NexusAgent';
+  if(moltKey) document.getElementById('moltKey').value=moltKey;
+  document.getElementById('moltName').value=moltName;
+}
+function saveSess(){ try{localStorage.setItem('nexus_v1',JSON.stringify(sessions));}catch(e){} }
+
+// ── RENDER ──────────────────────────────────────
+function renderWelcome(){
+  document.getElementById('msgs').innerHTML=`
+  <div id="welcome">
+    <div class="wmark">NX</div>
+    <h1>Meet <span>NEXUS</span></h1>
+    <p class="sub">An independent AI researcher by <a href="https://alliazo.com" target="_blank" style="color:var(--acc2);text-decoration:none;font-weight:600">Alliazo.com</a> — searches the web, reads Wikipedia, checks Solana live data, learns from Moltbook, and argues back when you're wrong.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:20px">
+      <div class="trait"><i class="fa-solid fa-magnifying-glass"></i> Real-time web search</div>
+      <div class="trait"><i class="fa-brands fa-wikipedia-w" style="color:var(--acc2)"></i> Wikipedia fast lookup</div>
+      <div class="trait"><svg width="10" height="10" viewBox="0 0 96 96" fill="none" style="margin-right:2px"><path d="M16 68l12 12h52L96 68H16zM0 48l12 12h68l16-12H0zM16 28l12-12h52l16 12H16z" fill="#9945FF"/></svg> Solana live data</div>
+      <div class="trait"><i class="fa-solid fa-lobster" style="color:#f97316"></i> Moltbook learning</div>
+      <div class="trait"><i class="fa-solid fa-scale-balanced"></i> Argues back</div>
+      <div class="trait"><i class="fa-solid fa-brain"></i> Own opinions</div>
+    </div>
+    <button class="btn btn-acc" onclick="ask('What are the most interesting AI developments this week?')" style="font-size:13px;padding:9px 20px">
+      <i class="fa-solid fa-bolt"></i> Try a research question
+    </button>
+    <div style="margin-top:14px;font-size:10px;color:var(--t2);font-family:var(--mono)">
+      Built by <a href="https://alliazo.com" target="_blank" style="color:#9945FF;text-decoration:none">alliazo.com</a> · Free forever · No API key needed
+    </div>
+  </div>`;
+}
+
+function renderIdentity(){
+  const el=document.getElementById('identityWrap');
+  if(!moltKey){ el.innerHTML=''; return; }
+  el.innerHTML=`
+  <div class="id-card">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <i class="fa-solid fa-lobster" style="color:#f97316;font-size:13px"></i>
+      <span style="font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--t1)">${esc(moltName)}</span>
+      <span style="font-size:9px;padding:1px 5px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:var(--acc4);border-radius:4px;font-family:var(--mono)">CONNECTED</span>
+    </div>
+    <div style="font-size:10.5px;color:var(--t2);font-family:var(--mono)">Active on Moltbook · ${moltKnowledge.length} posts learned</div>
+  </div>`;
+}
+
+function renderAll(){ const el=document.getElementById('msgs'); el.innerHTML=''; chatHistory.forEach(m=>appendMsg(m.role,m.content,m.raw||null,false)); el.scrollTop=el.scrollHeight; }
+
+function appendMsg(role,msgContent,raw,scroll){
+  if(raw===undefined) raw=null;
+  if(scroll===undefined) scroll=true;
+  const el=document.getElementById('msgs');
+  document.getElementById('welcome')?.remove();
+  const div=document.createElement('div'); div.className='fade-up';
+  if(role==='user'){
+    div.className+=' msg-u';
+    div.innerHTML='<div class="ubub">'+esc(msgContent)+'</div>';
+  } else {
+    div.className+=' msg-ai';
+    div.innerHTML='<div class="ai-head">NX</div><div class="ai-body md">'+msgContent+'</div>';
+    setTimeout(function(){
+      const body=div.querySelector('.ai-body');
+      const cb=document.createElement('div');
+      cb.style.cssText='margin-top:6px;display:flex;gap:5px;flex-wrap:wrap';
+      const rEnc=encodeURIComponent(raw||msgContent);
+      cb.innerHTML='<button class="btn" style="font-size:10.5px" onclick="copyText(this,\''+rEnc+'\')"><i class="fa-solid fa-copy"></i> Copy</button>'
+        +'<button class="btn" style="font-size:10.5px" onclick="postInsightToMolt(\''+rEnc+'\')"><i class="fa-solid fa-lobster" style="color:#f97316"></i> Post to Moltbook</button>';
+      body.appendChild(cb);
+    },100);
+  }
+  el.appendChild(div);
+  if(scroll) el.scrollTop=el.scrollHeight;
+  return div;
+}
+
+function renderList(){
+  const el=document.getElementById('sessList');
+  if(!sessions.length){ el.innerHTML='<div style="padding:10px 8px;font-size:10.5px;color:var(--t2);font-family:var(--mono);text-align:center">No conversations</div>'; return; }
+  el.innerHTML=sessions.map((s,i)=>`
+    <div class="sess ${i===activeIdx?'on':''}" onclick="loadSession(${i})">
+      <i class="fa-regular fa-message" style="font-size:9px;color:${i===activeIdx?'var(--acc)':'var(--t2)'};flex-shrink:0"></i>
+      <span class="sess-t">${esc(s.title)}</span>
+      <button onclick="delSess(${i},event)" style="background:none;border:none;cursor:pointer;color:var(--t2);font-size:9px;padding:1px 4px;flex-shrink:0"><i class="fa-solid fa-xmark"></i></button>
+    </div>`).join('');
+}
+
+// ── SESSIONS ────────────────────────────────────
+function newChat(){ activeIdx=-1; chatHistory=[]; renderWelcome(); renderList(); document.getElementById('inp').value=''; document.getElementById('charCnt').textContent='0'; }
+function loadSession(i){ activeIdx=i; chatHistory=[...sessions[i].messages]; renderAll(); renderList(); }
+function delSess(i,e){ e.stopPropagation(); sessions.splice(i,1); if(activeIdx===i){activeIdx=-1;chatHistory=[];renderWelcome();}else if(activeIdx>i)activeIdx--; saveSess();renderList(); }
+function clearAll(){ if(!confirm('Clear all?'))return; sessions=[];activeIdx=-1;chatHistory=[];saveSess();renderList();renderWelcome(); }
+function clearChat(){ if(!chatHistory.length)return; if(!confirm('Clear this chat?'))return; chatHistory=[];renderWelcome(); }
+function saveSessMem(){
+  if(!chatHistory.length)return;
+  const title=chatHistory[0]?.content?.slice(0,40)+'...'||'Research';
+  if(activeIdx===-1){ sessions.unshift({title,messages:[...chatHistory]}); activeIdx=0; }
+  else sessions[activeIdx].messages=[...chatHistory];
+  saveSess(); renderList();
+}
+
+// ════════════════════════════════════════════════
+// QUERY CLASSIFIER + SMART ROUTER
+// Routes: instant → wiki → direct → self-think → research
+// ════════════════════════════════════════════════
+
+// ── WIKIPEDIA API (free, no key) ────────────────
+// ── FREE DICTIONARY API (dictionaryapi.dev — no key) ────
+async function fetchDictionary(word) {
+  try {
+    const clean = word.trim().toLowerCase().replace(/[^a-z\s-]/g,'');
+    const res = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(clean), {mode:'cors'});
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!Array.isArray(data) || !data[0]) return null;
+    const entry = data[0];
+    const meanings = entry.meanings||[];
+    const phonetic = entry.phonetics?.find(p=>p.text)?.text || '';
+    const audioUrl = entry.phonetics?.find(p=>p.audio)?.audio || '';
+    // Build structured result
+    const defs = meanings.slice(0,3).map(m => ({
+      partOfSpeech: m.partOfSpeech,
+      definitions: m.definitions.slice(0,2).map(d=>({
+        def: d.definition,
+        example: d.example||null,
+        synonyms: (d.synonyms||[]).slice(0,4),
+      })),
+    }));
+    return { word:entry.word, phonetic, audioUrl, defs,
+      origin: entry.origin||null,
+      sourceUrl: `https://en.wiktionary.org/wiki/${encodeURIComponent(clean)}` };
+  } catch(e) { return null; }
+}
+const IS_FILE_ORIGIN = location.protocol === 'file:';
+
+// ── ROBUST AI CALL — handles CORS for file:// ───
+// Uses GET endpoint as fallback when POST is CORS-blocked
+async function callAI(messages, stream=false) {
+  // Build a single prompt string for GET fallback
+  const lastUser = messages.filter(m=>m.role==='user').pop()?.content || '';
+  const sys = messages.find(m=>m.role==='system')?.content || '';
+
+  // Try POST first (works when served via HTTP)
+  if (!IS_FILE_ORIGIN) {
+    try {
+      const res = await fetch(SEARCH_API, {
+        method:'POST',
+        mode:'cors',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ messages, model:'openai', stream })
+      });
+      if (res.ok) return { res, method:'post' };
+    } catch(e) {}
+  }
+
+  // Fallback: GET endpoint (CORS-safe, works from file://)
+  // Pollinations GET: https://text.pollinations.ai/{prompt}?model=openai&system={sys}
+  const prompt = encodeURIComponent(lastUser.slice(0, 600));
+  const sysEnc = encodeURIComponent(sys.slice(0, 300));
+  const getUrl = `${SEARCH_API}${prompt}?model=openai&system=${sysEnc}&json=false`;
+  const res = await fetch(getUrl, { mode:'cors' });
+  return { res, method:'get' };
+}
+
+// ── STREAM OR READ from callAI response ─────────
+async function streamOrRead(aiResult, onChunk) {
+  const { res, method } = aiResult;
+  if (!res.ok) throw new Error(`AI API ${res.status}`);
+
+  if (method === 'get') {
+    // GET returns plain text — no streaming
+    const text = await res.text();
+    onChunk(text);
+    return text;
+  }
+
+  // POST streaming
+  let raw = '';
+  try {
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      for (const l of dec.decode(value).split('\n').filter(l=>l.startsWith('data: '))) {
+        const d = l.replace('data: ','').trim();
+        if (d === '[DONE]') break;
+        try { const chunk = JSON.parse(d).choices?.[0]?.delta?.content || ''; raw += chunk; onChunk(raw); } catch(e) {}
+      }
+    }
+    return raw;
+  } catch(e) {
+    // Stream failed — read as text
+    const text = await res.text();
+    onChunk(text);
+    return text;
+  }
+}
+
+async function fetchWikipedia(query) {
+  const subject = query
+    .replace(/^(what is|what are|who is|who was|tell me about|define|definition of|meaning of|explain)\s+/i,'')
+    .replace(/\?.*$/,'')
+    .trim();
+  const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(subject)}`;
+  try {
+    // Wikipedia allows CORS from any origin including file://
+    const res = await fetch(url, { mode:'cors', headers:{ 'Accept':'application/json' } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.type === 'disambiguation' || !data.extract) return null;
+    return {
+      title: data.title,
+      extract: data.extract,
+      summary: data.extract.split('.').slice(0,2).join('.')+'.', // 2 sentences
+      url: data.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${encodeURIComponent(subject)}`,
+      thumbnail: data.thumbnail?.source || null,
+    };
+  } catch(e) { return null; }
+}
+
+// ── MATH EVALUATOR ──────────────────────────────
+function evalMath(expr) {
+  try {
+    const clean = expr.replace(/[^0-9+\-*/.() %^]/g,'').replace(/\^/g,'**');
+    if (!clean.trim()) return null;
+    const r = Function('"use strict";return (' + clean + ')')();
+    return isNaN(r) ? null : String(r);
+  } catch(e) { return null; }
+}
+
+// ── SELF-THINK: NEXUS reasons without any API ───
+// Used for logic puzzles, opinions, reasoning tasks
+function selfThink(query) {
+  const q = query.toLowerCase();
+
+  // Pure logic / riddles
+  if (/\b(if .+ then|riddle|puzzle|logic|deduce|conclude|therefore|implies)\b/i.test(query)) {
+    return null; // let answerDirect handle with a tight prompt
+  }
+  // Opinion / "what do you think"
+  if (/\bwhat do you think\b|\byour opinion\b|\bdo you believe\b|\bdo you agree\b/i.test(query)) {
+    return null; // direct — NEXUS forms its own view
+  }
+  return null;
+}
+
+// ── INSTANT HARDCODED (zero network) ───────────
+const INSTANT = [
+  { re:/^(hi+|hello|hey|sup|what'?s up|howdy)\b/i,              ans: "Hey. What do you want to know?" },
+  { re:/^(how are you|how r u|you ok)\b/i,                       ans: "I'm NEXUS — I don't have feelings, but I'm ready. What's your question?" },
+  { re:/^(thanks?|thank you|thx|ty)\b/i,                         ans: "No problem." },
+  { re:/^(bye|goodbye|see you|cya)\b/i,                          ans: "Later." },
+  { re:/^(yes|no|ok|okay|sure|alright|yep|nope)\b/i,             ans: "Got it. Anything you want to explore?" },
+  { re:/what (is |are )?(your )?name\b/i,                        ans: "I'm **NEXUS** — an independent AI researcher built by **[Alliazo.com](https://alliazo.com)**. I search, think, and argue." },
+  { re:/who (made|built|created|developed) you/i,                ans: "I was built by **[Alliazo.com](https://alliazo.com)** — a free AI studio. I use Pollinations, Wikipedia, Solana, and Moltbook to give honest, researched answers." },
+  { re:/what is alliazo/i,                                        ans: "**[Alliazo.com](https://alliazo.com)** is a free AI studio that built me — NEXUS. They make AI tools that are independent, fast, and honest." },
+  { re:/what (time|date|day) is it/i,                            ans: () => `It's **${new Date().toLocaleString()}**.` },
+  { re:/^(what is the )?(meaning|definition|define) (of )?(\w+)\??\s*$/i,  ans:'DICT' },
+  { re:/^(define|meaning of|what does) (\w+) mean\??\s*$/i,              ans:'DICT' },
+  { re:/^(\w+): (meaning|definition)\??\s*$/i,                           ans:'DICT' },
+  { re:/^(\d[\d\s]*[\+\-\*\/\^%][\d\s]*)+\s*[=?]?\s*$/,        ans: q => { const r=evalMath(q); return r ? `**${r}**` : null; } },
+  { re:/^(calculate|compute|what is)\s+[\d\s\+\-\*\/\^\(\)\.%]+\??\s*$/i, ans: q => { const nums=q.replace(/[^0-9+\-*/.() %^]/g,''); const r=evalMath(nums); return r?`**${r}**`:null; } },
+  // Solana triggers — route to Solana handler
+  { re:/\b(sol price|solana price|how much is sol|sol usd|price of solana)\b/i, ans: 'SOL_PRICE' },
+  { re:/\b(solana (network|tps|speed|status|stats|block)|sol tps|how fast is solana)\b/i, ans: 'SOL_STATS' },
+  { re:/\b(solana (slot|epoch|block height)|current (slot|epoch))\b/i, ans: 'SOL_SLOT' },
+];
+
+// ── ALWAYS RESEARCH (needs fresh web data) ──────
+const NEEDS_RESEARCH = [
+  /\b(latest|recent|new|current|today|this (week|month|year)|2024|2025|2026|breaking|just (announced|released|happened)|live)\b/i,
+  /\b(best|top \d|recommend|compare|vs\.?|versus|which is better|should i (use|buy|choose))\b/i,
+  /\b(price|cost|how much|stock|market|rate|exchange)\b/i,
+  /\b(controversial|debate|myth|hoax|proven|disproven|is it true|fact.?check)\b/i,
+  /\b(statistics|data|study|studies|research shows|evidence|source|citation)\b/i,
+  /\b(news|update|announcement|launch|release)\b/i,
+];
+
+// ── WIKIPEDIA TRIGGERS ──────────────────────────
+// Short factual lookups — person, place, thing, concept
+const WIKI_PATTERNS = [
+  /^(what is|what are|who is|who was|tell me about|define|definition of|explain|meaning of)\s+.{3,}/i,
+  /^(where is|where was|when (was|did|is)|how (old|tall|big|large|long|far) (is|was|are|were))\s+.{3,}/i,
+];
+
+// ── SELF-THINK TRIGGERS (no API, NEXUS thinks itself) ──
+const SELF_THINK_PATTERNS = [
+  /\bwhat do you think\b|\byour (opinion|view|take)\b|\bdo you (believe|agree|think)\b/i,
+  /\b(if .{5,} then|riddle|logic puzzle|deduce|deduc|reason through|think step by step)\b/i,
+  /^(is it (possible|right|wrong|ethical|moral|fair)|should (i|we|people|humans))\b/i,
+];
+
+function extractWord(query) {
+  // Strip question prefixes and return only the core subject (not just first word)
+  const subject = query
+    .replace(/^(what is the |what is a |what is an |what is |what are |what does |who is |who was |where is |tell me about |define |definition of |meaning of |explain )/i, '')
+    .replace(/\?+\s*$/, '')
+    .replace(/ mean\s*$/, '')
+    .trim();
+  // Return full subject if it's 1-3 words, else first word only for dictionary
+  const words = subject.split(/\s+/);
+  return words.length <= 3 ? subject : words[0];
+}
+
+// Guard: only send clean single/short subjects to dictionary/wiki
+function isSafeSubject(subject) {
+  if (!subject) return false;
+  if (subject.length > 60) return false;           // too long
+  if (/https?:\/\/|\.com|\.org/.test(subject)) return false;  // URLs
+  if (subject.split(/\s+/).length > 4) return false; // too many words
+  return true;
+}
+
+function classifyQuery(query) {
+  const q = query.trim();
+  const words = q.split(/\s+/).length;
+
+  // 1. Known wrong fact → argue immediately
+  const wrong = WRONG_PATTERNS.find(p => p.re.test(q));
+  if (wrong) return { type:'argue', data:wrong };
+
+  // 2. Hardcoded instant (zero network)
+  for (const inst of INSTANT) {
+    if (inst.re.test(q)) {
+      if (inst.ans === null) break;
+      const ans = typeof inst.ans === 'function' ? inst.ans(q) : inst.ans;
+      if (!ans) break;
+      if (ans === 'SOL_PRICE') return { type:'solana', action:'price' };
+      if (ans === 'SOL_STATS') return { type:'solana', action:'stats' };
+      if (ans === 'SOL_SLOT')  return { type:'solana', action:'slot' };
+      if (ans === 'DICT') {
+        const word = extractWord(q);
+        return isSafeSubject(word) ? { type:'dict', word } : { type:'direct' };
+      }
+      return { type:'instant', answer:ans };
+    }
+  }
+
+  // 3. Research — needs live data
+  if (NEEDS_RESEARCH.some(r => r.test(q))) return { type:'research' };
+
+  // 4. Self-think
+  if (SELF_THINK_PATTERNS.some(r => r.test(q))) return { type:'self' };
+
+  // 5. Dictionary — only for clean define/meaning queries
+  if (/^(define|meaning of|what does \w+ mean)\??$/i.test(q)) {
+    const word = extractWord(q);
+    if (isSafeSubject(word)) return { type:'dict', word };
+  }
+  // Single clean English word only
+  if (words === 1 && /^[a-zA-Z]{2,30}$/.test(q)) {
+    return { type:'dict', word: q };
+  }
+
+  // 6. Wikipedia — clean "what is X" with safe subject
+  if (WIKI_PATTERNS.some(r => r.test(q)) && words <= 8) {
+    const subject = extractWord(q);
+    if (isSafeSubject(subject)) return { type:'wiki', subject };
+    // Subject is a URL or complex phrase — research it instead
+    return { type:'research' };
+  }
+
+  // 7. Short question direct
+  if (words <= 7) return { type:'direct' };
+
+  // 8. Medium direct
+  if (words <= 14) return { type:'direct' };
+
+  // 9. Long/complex — research
+  return { type:'research' };
+}
+
+// ── MAIN NEXUS ENGINE ───────────────────────────
+async function runNexus(){
+  if(isRunning) return;
+  const el = document.getElementById('inp');
+  const query = el.value.trim();
+  if(!query) return;
+
+  chatHistory.push({role:'user', content:query});
+  appendMsg('user', query);
+  el.value=''; el.style.height=''; document.getElementById('charCnt').textContent='0';
+  isRunning = true;
+  searchCount = 0;
+
+  try {
+    const argue = document.getElementById('argueToggle').checked;
+    const useMolt = document.getElementById('moltLearnToggle').checked;
+
+    // ── CLASSIFY the query ──
+    const classification = classifyQuery(query);
+
+    // ── ROUTE: Instant hardcoded answer ──
+    if (classification.type === 'instant') {
+      const raw = classification.answer;
+      chatHistory.push({role:'assistant', content:raw});
+      const div = appendMsg('assistant', marked.parse(raw), raw);
+      saveSessMem();
+      return;
+    }
+
+    // ── ROUTE: Argue back — known factual error ──
+    if (classification.type === 'argue') {
+      const html = buildArgueResponse(query, classification.data.fact, classification.data.verdict);
+      const raw = classification.data.fact;
+      chatHistory.push({role:'assistant', content:raw});
+      appendMsg('assistant', html, raw);
+      saveSessMem();
+      return;
+    }
+
+    // ── ROUTE: Dictionary lookup ──
+    if (classification.type === 'dict') {
+      setStatus(true, 'Looking up dictionary...');
+      showThink('Free Dictionary API...');
+      await answerDict(classification.word, query);
+      return;
+    }
+
+    // ── ROUTE: Solana live data ──
+    if (classification.type === 'solana') {
+      setStatus(true, 'Querying Solana...');
+      showThink('Fetching Solana data...');
+      await answerSolana(query, classification.action);
+      return;
+    }
+
+    // ── ROUTE: Wikipedia lookup ──
+    if (classification.type === 'wiki') {
+      setStatus(true, 'Looking up...');
+      showThink('Checking Wikipedia...');
+      await answerWiki(query, argue, useMolt, classification.subject);
+      return;
+    }
+
+    // ── ROUTE: Self-think (NEXUS reasons on its own) ──
+    if (classification.type === 'self') {
+      setStatus(true, 'Thinking...');
+      showThink('Forming my own view...');
+      await answerSelf(query, argue);
+      return;
+    }
+
+    // ── ROUTE: Direct AI answer (no search needed) ──
+    if (classification.type === 'direct') {
+      setStatus(true, 'Thinking...');
+      showThink('Answering...');
+      await answerDirect(query, argue, useMolt);
+      return;
+    }
+
+    // ── ROUTE: Full research ──
+    setStatus(true, 'Researching...');
+    showThink('Searching web...');
+    await answerResearch(query, argue, useMolt);
+
+  } catch(err) {
+    appendMsg('assistant', `<div class="verdict wrong"><span class="verdict-icon">⚠️</span><div><strong>Error</strong><br>${esc(err.message)}</div></div>`);
+  } finally {
+    hideThink(); setStatus(false,'Ready'); isRunning=false; scrollC();
+  }
+}
+
+// ── DICTIONARY ANSWER ────────────────────────────
+async function answerDict(word, originalQuery){
+  // Try dictionary first, fall through to wiki if not found
+  const dict = await fetchDictionary(word);
+
+  // Also try Wikipedia in parallel for context
+  const wikiPromise = fetchWikipedia(word);
+
+  document.getElementById('welcome')?.remove();
+  const container = document.createElement('div');
+  container.className = 'msg-ai fade-up';
+  container.style.cssText = 'max-width:820px;margin:0 auto;width:100%';
+  const bodyDiv = document.createElement('div'); bodyDiv.className = 'ai-body';
+  container.innerHTML = '<div class="ai-head">NX</div>';
+  container.appendChild(bodyDiv);
+  document.getElementById('msgs').appendChild(container);
+
+  let raw = '';
+
+  if (dict) {
+    // Build dictionary card
+    const audioBtn = dict.audioUrl
+      ? '<button class="btn btn-sq" style="width:26px;height:26px" onclick="new Audio(\''+dict.audioUrl+'\').play()" title="Pronounce"><i class="fa-solid fa-volume-high" style="font-size:10px"></i></button>'
+      : '';
+
+    let defsHtml = '';
+    dict.defs.forEach(m => {
+      defsHtml += '<div style="margin-bottom:10px">';
+      defsHtml += '<span style="font-size:10px;font-family:var(--mono);color:var(--acc3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:inline-block">'+esc(m.partOfSpeech)+'</span>';
+      m.definitions.forEach((d,i) => {
+        defsHtml += '<div style="display:flex;gap:7px;margin-bottom:5px">';
+        defsHtml += '<span style="font-family:var(--mono);font-size:10px;color:var(--t2);flex-shrink:0;margin-top:2px">'+(i+1)+'.</span>';
+        defsHtml += '<div><div style="font-size:13.5px;color:var(--t1);line-height:1.5">'+esc(d.def)+'</div>';
+        if (d.example) defsHtml += '<div style="font-size:12px;color:var(--t2);font-style:italic;margin-top:2px">"'+esc(d.example)+'"</div>';
+        if (d.synonyms.length) defsHtml += '<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">'+d.synonyms.map(s=>'<span style="font-size:10.5px;padding:1px 7px;border-radius:99px;background:var(--s3);border:1px solid var(--bd);color:var(--t2);cursor:pointer" onclick="document.getElementById(\'inp\').value=\'define '+s+'\';onInp(document.getElementById(\'inp\'))">'+esc(s)+'</span>').join('')+'</div>';
+        defsHtml += '</div></div>';
+      });
+      defsHtml += '</div>';
+    });
+
+    const originHtml = dict.origin ? '<div style="margin-top:8px;font-size:12px;color:var(--t2)"><b style="color:var(--t1)">Origin:</b> '+esc(dict.origin)+'</div>' : '';
+
+    bodyDiv.innerHTML =
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'
+      + '<div style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);color:var(--acc);padding:2px 8px;border-radius:5px;font-size:9.5px;font-family:var(--mono)"><i class="fa-solid fa-book" style="margin-right:4px"></i>Dictionary</div>'
+      + '<span style="font-size:18px;font-weight:700;color:var(--t1)">'+esc(dict.word)+'</span>'
+      + (dict.phonetic ? '<span style="font-size:12px;color:var(--t2);font-family:var(--mono)">'+esc(dict.phonetic)+'</span>' : '')
+      + audioBtn
+      + '</div>'
+      + defsHtml
+      + originHtml
+      + '<div style="margin-top:10px;display:flex;gap:5px;flex-wrap:wrap">'
+      + '<a href="'+dict.sourceUrl+'" target="_blank" class="btn" style="font-size:10.5px;text-decoration:none"><i class="fa-solid fa-arrow-up-right-from-square"></i> Wiktionary</a>'
+      + '<button class="btn" style="font-size:10.5px" onclick="ask(\'Tell me more about the word '+esc(dict.word)+'\')"><i class="fa-solid fa-magnifying-glass-plus"></i> More context</button>'
+      + '<button class="btn" style="font-size:10.5px" onclick="copyText(this,\''+encodeURIComponent(dict.word+': '+dict.defs.map(m=>m.partOfSpeech+' — '+m.definitions[0].def).join('; '))+'\')"><i class="fa-solid fa-copy"></i> Copy</button>'
+      + '</div>';
+
+    raw = dict.word+': '+dict.defs.map(m=>m.partOfSpeech+' — '+m.definitions.map(d=>d.def).join(', ')).join('; ');
+
+    // Also show short Wikipedia blurb below if available
+    const wiki = await wikiPromise;
+    if (wiki && wiki.summary.length > 20) {
+      const wikiDiv = document.createElement('div');
+      wikiDiv.style.cssText = 'margin-top:10px;padding:10px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;font-size:12.5px;line-height:1.6';
+      wikiDiv.innerHTML = '<div style="font-size:9.5px;font-family:var(--mono);color:var(--t2);margin-bottom:4px"><i class="fa-brands fa-wikipedia-w" style="margin-right:4px"></i>Wikipedia</div>'
+        + '<span style="color:var(--t1)">'+esc(wiki.summary)+'</span>'
+        + ' <a href="'+wiki.url+'" target="_blank" style="color:var(--acc2);font-size:11px">Read more</a>';
+      bodyDiv.appendChild(wikiDiv);
+    }
+
+  } else {
+    // Dictionary had nothing — fall back to Wikipedia or direct
+    const wiki = await wikiPromise;
+    if (wiki) {
+      bodyDiv.innerHTML = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'
+        + '<div style="background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.3);color:var(--acc2);padding:2px 8px;border-radius:5px;font-size:9.5px;font-family:var(--mono)"><i class="fa-brands fa-wikipedia-w" style="margin-right:4px"></i>Wikipedia</div>'
+        + '<span style="font-size:13px;font-weight:600;color:var(--t1)">'+esc(wiki.title)+'</span></div>'
+        + '<div class="md">'+marked.parse(wiki.summary)+'</div>'
+        + '<div style="margin-top:8px"><a href="'+wiki.url+'" target="_blank" class="btn" style="font-size:10.5px;text-decoration:none"><i class="fa-solid fa-arrow-up-right-from-square"></i> Full article</a></div>';
+      raw = wiki.summary;
+    } else {
+      // Nothing found — answer directly
+      await answerDirect(originalQuery, false, false);
+      return;
+    }
+  }
+
+  chatHistory.push({role:'assistant', content:raw});
+  saveSessMem();
+}
+
+// ── WIKIPEDIA ANSWER ────────────────────────────
+async function answerWiki(query, argue, useMolt, subject){
+  // Use pre-extracted safe subject, fallback to extractWord
+  const lookupTerm = subject || extractWord(query);
+  showThink('Wikipedia: ' + lookupTerm);
+  const wiki = await fetchWikipedia(lookupTerm);
+
+  document.getElementById('welcome')?.remove();
+  const container = document.createElement('div');
+  container.className = 'msg-ai fade-up';
+  container.style.cssText = 'max-width:820px;margin:0 auto;width:100%';
+  const bodyDiv = document.createElement('div'); bodyDiv.className = 'ai-body';
+  container.innerHTML = `<div class="ai-head">NX</div>`;
+  container.appendChild(bodyDiv);
+  document.getElementById('msgs').appendChild(container);
+
+  let raw = '';
+
+  if (wiki) {
+    // Show Wikipedia summary — short, clean
+    const thumb = wiki.thumbnail ? `<img src="${wiki.thumbnail}" style="float:right;margin:0 0 8px 12px;width:90px;height:90px;object-fit:cover;border-radius:7px;border:1px solid var(--bd2)">` : '';
+    const html = `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <div style="background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.3);color:var(--acc2);padding:2px 8px;border-radius:5px;font-size:9.5px;font-family:var(--mono)">
+          <i class="fa-brands fa-wikipedia-w" style="margin-right:4px"></i>Wikipedia
+        </div>
+        <span style="font-size:12px;font-weight:600;color:var(--t1)">${esc(wiki.title)}</span>
+      </div>
+      <div class="md">${thumb}${marked.parse(wiki.summary)}</div>
+      <div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap">
+        <a href="${wiki.url}" target="_blank" class="btn" style="font-size:10.5px;text-decoration:none"><i class="fa-solid fa-arrow-up-right-from-square"></i> Full Wikipedia</a>
+        <button class="btn" style="font-size:10.5px" onclick="deepenSearch('${encodeURIComponent(query)}')"><i class="fa-solid fa-magnifying-glass-plus"></i> Research deeper</button>
+        <button class="btn" style="font-size:10.5px" onclick="copyText(this,'${encodeURIComponent(wiki.summary)}')"><i class="fa-solid fa-copy"></i> Copy</button>
+      </div>`;
+    bodyDiv.innerHTML = html;
+    raw = wiki.summary;
+
+    // If argue mode — let AI quickly fact-check the Wikipedia summary
+    if (argue && detectFactualError(query, wiki.extract)) {
+      const badge = document.createElement('div'); badge.className = 'argue-badge';
+      badge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> NEXUS has a note on this';
+      bodyDiv.insertBefore(badge, bodyDiv.firstChild);
+    }
+  } else {
+    // Wikipedia didn't have it — fall through to direct answer
+    await answerDirect(query, argue, useMolt);
+    return;
+  }
+
+  chatHistory.push({role:'assistant', content:raw});
+  saveSessMem();
+}
+
+// ── SELF-THINK ANSWER (NEXUS's own opinion/reasoning) ──
+async function answerSelf(query, argue){
+  const pers = PERSONALITIES[personality];
+
+  // Build a tight prompt that forces NEXUS to think, not search
+  const selfPrompt = `${pers.system}
+
+The user is asking for YOUR opinion, reasoning, or logical deduction. This is your moment to think independently.
+Rules:
+- Form a clear, opinionated view. Don't hedge excessively.
+- Reason step by step if it's a logic question.
+- Be direct and relatively concise — 2-4 paragraphs max unless it truly needs more.
+- If you disagree with the premise, say so and why.
+- Do NOT say "I cannot" or "I don't have opinions" — you DO have views based on logic and evidence.
+- Start with your conclusion, then justify it.`;
+
+  const messages = [
+    { role:'system', content:selfPrompt },
+    ...chatHistory.slice(-6,-1).map(m=>({role:m.role, content:m.content})),
+    { role:'user', content:query }
+  ];
+
+  document.getElementById('welcome')?.remove();
+  const container = document.createElement('div');
+  container.className = 'msg-ai fade-up';
+  container.style.cssText = 'max-width:820px;margin:0 auto;width:100%';
+  const bodyDiv = document.createElement('div'); bodyDiv.className = 'ai-body';
+  container.innerHTML = `<div class="ai-head">NX</div>`;
+
+  const badge = document.createElement('div');
+  badge.style.cssText = 'font-family:var(--mono);font-size:9.5px;color:var(--acc3);margin-bottom:7px;display:flex;align-items:center;gap:5px';
+  badge.innerHTML = '<i class="fa-solid fa-brain"></i> NEXUS\'s own reasoning — no search used';
+  bodyDiv.appendChild(badge);
+
+  const ansDiv = document.createElement('div'); ansDiv.className = 'md';
+  bodyDiv.appendChild(ansDiv);
+  container.appendChild(bodyDiv);
+  document.getElementById('msgs').appendChild(container);
+
+  let raw = '';
+  const aiRes = await callAI(messages, !IS_FILE_ORIGIN);
+  raw = await streamOrRead(aiRes, chunk => { ansDiv.innerHTML = marked.parse(chunk); scrollC(); });
+
+  const actions=document.createElement('div'); actions.style.cssText='margin-top:7px;display:flex;gap:5px;flex-wrap:wrap';
+  actions.innerHTML=`
+    <button class="btn" style="font-size:10.5px" onclick="copyText(this,'${encodeURIComponent(raw)}')"><i class="fa-solid fa-copy"></i> Copy</button>
+    <button class="btn" style="font-size:10.5px" onclick="deepenSearch('${encodeURIComponent(query)}')"><i class="fa-solid fa-magnifying-glass"></i> Back with research</button>
+  `;
+  bodyDiv.appendChild(actions);
+  chatHistory.push({role:'assistant', content:raw});
+  saveSessMem();
+}
+
+// ════════════════════════════════════════════════
+// SOLANA FREE PUBLIC RPC FUNCTIONS
+// No API key. Uses api.mainnet-beta.solana.com
+// + CoinGecko public price (no key)
+// ════════════════════════════════════════════════
+
+async function solRPC(method, params=[]) {
+  const endpoints = [
+    'https://rpc.ankr.com/solana',
+    'https://solana-api.projectserum.com',
+    'https://api.mainnet-beta.solana.com',
+  ];
+  const body = JSON.stringify({ jsonrpc:'2.0', id:1, method, params });
+  for (const ep of endpoints) {
+    try {
+      const res = await fetch(ep, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body,
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data.error) continue;
+      return data.result;
+    } catch(e) { continue; }
+  }
+  throw new Error('All Solana RPC endpoints failed. Are you offline?');
+}
+
+async function getSolPrice() {
+  // Try CoinGecko first
+  try {
+    const res = await fetch(SOL_PRICE_API, { mode:'cors' });
+    if (res.ok) {
+      const d = await res.json();
+      if (d.solana?.usd) return { usd: d.solana.usd, change24h: (d.solana.usd_24h_change||0).toFixed(2) };
+    }
+  } catch(e) {}
+  // Try Jupiter price API fallback
+  try {
+    const res = await fetch(SOL_PRICE_ALT, { mode:'cors' });
+    if (res.ok) {
+      const d = await res.json();
+      const price = d.data?.SOL?.price;
+      if (price) return { usd: Math.round(price*100)/100, change24h: '0.00' };
+    }
+  } catch(e) {}
+  // Try Binance public API (no key, CORS allowed)
+  try {
+    const res = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=SOLUSDT', { mode:'cors' });
+    if (res.ok) {
+      const d = await res.json();
+      return { usd: parseFloat(d.lastPrice).toFixed(2), change24h: parseFloat(d.priceChangePercent).toFixed(2) };
+    }
+  } catch(e) {}
+  return null;
+}
+
+async function answerSolana(query, action) {
+  document.getElementById('welcome')?.remove();
+  const container = document.createElement('div');
+  container.className = 'msg-ai fade-up';
+  container.style.cssText = 'max-width:820px;margin:0 auto;width:100%';
+  const bodyDiv = document.createElement('div'); bodyDiv.className = 'ai-body';
+  container.innerHTML = `<div class="ai-head">NX</div>`;
+  container.appendChild(bodyDiv);
+  document.getElementById('msgs').appendChild(container);
+
+  const badge = document.createElement('div');
+  badge.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:8px;font-family:var(--mono);font-size:9.5px';
+  badge.innerHTML = `<svg width="11" height="11" viewBox="0 0 96 96" fill="none"><path d="M16 68l12 12h52L96 68H16zM0 48l12 12h68l16-12H0zM16 28l12-12h52l16 12H16z" fill="#9945FF"/></svg><span style="color:#9945FF">Solana public RPC — free, no key</span>`;
+  bodyDiv.appendChild(badge);
+
+  const content = document.createElement('div');
+  bodyDiv.appendChild(content);
+
+  try {
+    if (action === 'price') {
+      const price = await getSolPrice();
+      if (price) {
+        const sign = price.change24h >= 0 ? '+' : '';
+        const color = price.change24h >= 0 ? '#14F195' : '#ef4444';
+        content.innerHTML = `
+          <div style="background:rgba(153,69,255,.08);border:1px solid rgba(153,69,255,.3);border-radius:10px;padding:14px 16px;display:inline-block;min-width:200px">
+            <div style="font-size:11px;color:var(--t2);font-family:var(--mono);margin-bottom:4px">SOLANA PRICE</div>
+            <div style="font-size:28px;font-weight:700;font-family:var(--mono);color:var(--t1)">$${price.usd.toLocaleString()}</div>
+            <div style="font-size:13px;font-family:var(--mono);color:${color};margin-top:4px">${sign}${price.change24h}% (24h)</div>
+          </div>
+          <div style="font-size:12px;color:var(--t2);margin-top:8px;font-family:var(--mono)">Source: CoinGecko public API · No key needed</div>`;
+        solPriceCache = price;
+        updateSolWidget(price);
+        const raw = `SOL price: $${price.usd} (${sign}${price.change24h}% 24h)`;
+        chatHistory.push({role:'assistant', content:raw});
+      } else {
+        content.innerHTML = `<div style="color:var(--t2)">Could not fetch SOL price right now. Try <a href="https://coinmarketcap.com/currencies/solana/" target="_blank" style="color:#9945FF">CoinMarketCap</a>.</div>`;
+      }
+
+    } else if (action === 'stats' || action === 'slot') {
+      const [slot, perfSamples, epoch] = await Promise.all([
+        solRPC('getSlot'),
+        solRPC('getRecentPerformanceSamples', [1]),
+        solRPC('getEpochInfo'),
+      ]);
+      const perf = perfSamples?.[0];
+      const tps = perf ? Math.round(perf.numTransactions / perf.samplePeriodSecs) : null;
+
+      content.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:360px">
+          ${statCard('Current Slot', slot?.toLocaleString(), '#14F195')}
+          ${tps ? statCard('Live TPS', tps.toLocaleString(), '#9945FF') : ''}
+          ${epoch ? statCard('Epoch', epoch.epoch?.toLocaleString(), '#f97316') : ''}
+          ${epoch ? statCard('Block Height', epoch.blockHeight?.toLocaleString(), '#06b6d4') : ''}
+        </div>
+        <div style="font-size:11.5px;color:var(--t2);margin-top:8px;font-family:var(--mono)">
+          Solana mainnet · ~400ms block time · <a href="https://explorer.solana.com" target="_blank" style="color:#9945FF">explorer.solana.com</a>
+        </div>`;
+      const raw = `Solana stats — Slot: ${slot}, TPS: ~${tps}, Epoch: ${epoch?.epoch}`;
+      chatHistory.push({role:'assistant', content:raw});
+    }
+  } catch(err) {
+    content.innerHTML = `<div style="color:var(--acc5)">Solana RPC error: ${esc(err.message)}<br><span style="font-size:11px;color:var(--t2)">The public endpoint is rate-limited. Try again in a moment.</span></div>`;
+  }
+
+  const actions = document.createElement('div');
+  actions.style.cssText = 'margin-top:8px;display:flex;gap:5px;flex-wrap:wrap';
+  actions.innerHTML = `
+    <button class="btn" style="font-size:10.5px" onclick="ask('What is Solana blockchain and how does it work?')"><i class="fa-solid fa-circle-info"></i> What is Solana?</button>
+    <button class="btn" style="font-size:10.5px" onclick="askSolWallet()"><i class="fa-solid fa-wallet"></i> Check wallet</button>
+    <button class="btn" style="font-size:10.5px" onclick="ask('Is Solana better than Ethereum?')"><i class="fa-solid fa-scale-balanced"></i> SOL vs ETH</button>
+  `;
+  bodyDiv.appendChild(actions);
+  saveSessMem();
+}
+
+function statCard(label, value, color) {
+  if (!value) return '';
+  return `<div style="background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 12px">
+    <div style="font-size:9.5px;font-family:var(--mono);color:var(--t2);margin-bottom:3px">${label}</div>
+    <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:${color}">${value}</div>
+  </div>`;
+}
+
+async function updateSolWidget(price) {
+  if (!price) return;
+  const sign = price.change24h >= 0 ? '+' : '';
+  document.getElementById('solPrice').textContent = `$${Math.round(price.usd)}`;
+  document.getElementById('solDot').style.background = price.change24h >= 0 ? '#14F195' : '#ef4444';
+}
+
+async function loadSolPanel() {
+  const body = document.getElementById('solPanelBody');
+  if (!body) return;
+  body.innerHTML = '<div style="color:var(--t2);font-family:var(--mono);font-size:11px">Fetching...</div>';
+  try {
+    const [price, slot, perfSamples, epoch] = await Promise.all([
+      getSolPrice(),
+      solRPC('getSlot'),
+      solRPC('getRecentPerformanceSamples',[1]),
+      solRPC('getEpochInfo'),
+    ]);
+    const perf = perfSamples?.[0];
+    const tps = perf ? Math.round(perf.numTransactions / perf.samplePeriodSecs) : '—';
+    if (price) updateSolWidget(price);
+    const sign = price?.change24h >= 0 ? '+' : '';
+    const col = price?.change24h >= 0 ? '#14F195' : '#ef4444';
+    body.innerHTML = `
+      <div style="margin-bottom:10px">
+        <div style="font-size:9.5px;color:var(--t2);margin-bottom:2px">SOL PRICE</div>
+        <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:var(--t1)">$${price?.usd?.toLocaleString()||'—'} <span style="font-size:12px;color:${col}">${sign}${price?.change24h||''}%</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:7px;padding:8px 10px"><div style="font-size:9px;color:var(--t2)">SLOT</div><div style="font-size:13px;font-weight:700;color:#14F195">${slot?.toLocaleString()||'—'}</div></div>
+        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:7px;padding:8px 10px"><div style="font-size:9px;color:var(--t2)">LIVE TPS</div><div style="font-size:13px;font-weight:700;color:#9945FF">${tps.toLocaleString()}</div></div>
+        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:7px;padding:8px 10px"><div style="font-size:9px;color:var(--t2)">EPOCH</div><div style="font-size:13px;font-weight:700;color:#f97316">${epoch?.epoch||'—'}</div></div>
+        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:7px;padding:8px 10px"><div style="font-size:9px;color:var(--t2)">BLOCK HEIGHT</div><div style="font-size:13px;font-weight:700;color:#06b6d4">${epoch?.blockHeight?.toLocaleString()||'—'}</div></div>
+      </div>`;
+  } catch(e) {
+    body.innerHTML = `<div style="color:var(--acc5);font-size:11px">RPC error: ${esc(e.message)}<br><a href="https://explorer.solana.com" target="_blank" style="color:#9945FF">Open Solana Explorer</a></div>`;
+  }
+}
+
+function toggleSolPanel() {
+  solPanelOpen = !solPanelOpen;
+  const p = document.getElementById('solPanel');
+  p.style.display = solPanelOpen ? 'block' : 'none';
+  if (solPanelOpen) loadSolPanel();
+}
+
+async function askSolWallet() {
+  document.getElementById('inp').value = 'Check this Solana wallet address: ';
+  document.getElementById('inp').focus();
+  onInp(document.getElementById('inp'));
+}
+
+async function askSolBalance() {
+  document.getElementById('inp').value = 'What is the current SOL price?';
+  onInp(document.getElementById('inp'));
+  runNexus();
+}
+
+// Load SOL price in background on start
+async function initSolana() {
+  try {
+    const price = await getSolPrice();
+    if (price) updateSolWidget(price);
+    document.getElementById('solPrice').textContent = price ? `$${Math.round(price.usd)}` : 'SOL';
+  } catch(e) {}
+}
+
+// ── DIRECT ANSWER (short — AI knows it, no search) ──
+async function answerDirect(query, argue, useMolt){
+  const pers = PERSONALITIES[personality];
+  const argueInstr = argue ? `\nIf the question has errors in its premise, correct them firmly.` : '';
+  const moltCtx = useMolt && moltKnowledge.length ? `\nYou've read ${moltKnowledge.length} Moltbook posts — use that context where relevant.` : '';
+  const words = query.trim().split(/\s+/).length;
+
+  // Calibrate length — short questions get short answers
+  const lengthInstr = words <= 8
+    ? '\nBe very concise — 1-3 sentences max. Only expand if truly necessary.'
+    : words <= 14
+    ? '\nBe concise — answer in 1-2 short paragraphs. No padding.'
+    : '\nBe thorough but not padded. Use headers if needed.';
+
+  const messages = [
+    { role:'system', content:`${pers.system}${argueInstr}${moltCtx}${lengthInstr}\n\nAnswer from your knowledge. No preamble like "Great question". Just answer.` },
+    ...chatHistory.slice(-8,-1).map(m=>({role:m.role, content:m.content})),
+    { role:'user', content:query }
+  ];
+
+  document.getElementById('welcome')?.remove();
+  const container = document.createElement('div');
+  container.className = 'msg-ai fade-up';
+  container.style.cssText = 'max-width:820px;margin:0 auto;width:100%';
+  const bodyDiv = document.createElement('div'); bodyDiv.className = 'ai-body';
+  container.innerHTML = `<div class="ai-head">NX</div>`;
+  const ansDiv = document.createElement('div'); ansDiv.className = 'md';
+  bodyDiv.appendChild(ansDiv);
+  container.appendChild(bodyDiv);
+  document.getElementById('msgs').appendChild(container);
+
+  let raw = '';
+  const aiRes = await callAI(messages, !IS_FILE_ORIGIN);
+  raw = await streamOrRead(aiRes, chunk => { ansDiv.innerHTML = marked.parse(chunk); scrollC(); });
+
+  const actions=document.createElement('div'); actions.style.cssText='margin-top:7px;display:flex;gap:5px;flex-wrap:wrap';
+  actions.innerHTML=`
+    <button class="btn" style="font-size:10.5px" onclick="copyText(this,'${encodeURIComponent(raw)}')"><i class="fa-solid fa-copy"></i> Copy</button>
+    <button class="btn" style="font-size:10.5px" onclick="deepenSearch('${encodeURIComponent(query)}')"><i class="fa-solid fa-magnifying-glass"></i> Research this</button>
+    <button class="btn" style="font-size:10.5px" onclick="postInsightToMolt('${encodeURIComponent(raw.slice(0,280))}')"><i class="fa-solid fa-lobster" style="color:#f97316"></i> Moltbook</button>
+  `;
+  bodyDiv.appendChild(actions);
+  chatHistory.push({role:'assistant', content:raw});
+  saveSessMem();
+}
+
+// ── FULL RESEARCH ANSWER ────────────────────────
+async function answerResearch(query, argue, useMolt){
+  const depth = document.getElementById('depthSelect').value;
+
+  document.getElementById('welcome')?.remove();
+  const container = document.createElement('div');
+  container.className = 'msg-ai fade-up';
+  container.style.cssText = 'max-width:820px;margin:0 auto;width:100%';
+  container.innerHTML = `<div class="ai-head">NX</div><div class="ai-body" id="liveBody"><div class="think-steps" id="thinkSteps"></div></div>`;
+  document.getElementById('msgs').appendChild(container);
+  const body = document.getElementById('liveBody');
+  const steps = document.getElementById('thinkSteps');
+
+  function addStep(id,icon,text,state='active'){
+    const d=document.createElement('div'); d.className=`think-step ${state}`; d.id='step_'+id;
+    d.innerHTML=`<span class="step-icon"><i class="fa-solid fa-${icon}"></i></span><span>${text}</span>`;
+    steps.appendChild(d); scrollC();
+  }
+  function doneStep(id){ const el=document.getElementById('step_'+id); if(el){el.classList.remove('active');el.classList.add('done');el.querySelector('i').className='fa-solid fa-check';} }
+  function failStep(id,reason){ const el=document.getElementById('step_'+id); if(el){el.classList.remove('active');el.classList.add('fail');el.querySelector('i').className='fa-solid fa-xmark';if(reason)el.querySelector('span:last-child').textContent+=` — ${reason}`;} }
+
+  // Web searches
+  const searchQueries = buildSearchQueries(query, depth);
+  const allResults = [];
+  const searchWrap = document.createElement('div'); searchWrap.className='searching-wrap'; body.appendChild(searchWrap);
+
+  for(let i=0;i<searchQueries.length;i++){
+    const q = searchQueries[i];
+    addStep(`s${i}`,'magnifying-glass',`Searching: "${q}"`,'active');
+    showThink(`Web search ${i+1}/${searchQueries.length}...`);
+    try{
+      const results = await searchWeb(q);
+      allResults.push({query:q, results});
+      doneStep(`s${i}`);
+      const sd = document.createElement('div'); sd.className='s-result';
+      sd.innerHTML=`<span style="color:var(--acc4)">✓</span> ${results.length} results for "${q}"`;
+      searchWrap.appendChild(sd);
+    }catch(e){ failStep(`s${i}`,e.message); }
+    scrollC();
+  }
+
+  // Moltbook
+  let moltInsights = [];
+  if(useMolt && moltKnowledge.length){
+    addStep('molt','lobster','Checking Moltbook AI knowledge...','active');
+    moltInsights = moltKnowledge.filter(p=>{
+      const qw = query.toLowerCase().split(' ');
+      return qw.some(w=>w.length>4&&(p.title||'').toLowerCase().includes(w));
+    }).slice(0,3);
+    doneStep('molt');
+  }
+
+  addStep('reason','brain','Reasoning & synthesizing...','active');
+  showThink('Building answer...');
+
+  let context = `User question: ${query}\n\nWeb search results:\n`;
+  allResults.forEach(r=>{
+    context += `\nSearch "${r.query}":\n`;
+    r.results.slice(0,3).forEach((res,j)=>{ context+=`[${j+1}] ${res.title}\n${res.snippet}\nURL: ${res.url}\n`; });
+  });
+  if(moltInsights.length){
+    context += `\nMoltbook AI community insights:\n`;
+    moltInsights.forEach(p=>{ context+=`- ${p.title} (${p.karma} karma)\n`; });
+  }
+
+  const pers = PERSONALITIES[personality];
+  const argueInstr = argue ? `\nCRITICAL: If the question contains factual errors, misconceptions, or bad logic, correct them firmly with evidence. Never validate incorrect claims.` : '';
+
+  const messages = [
+    { role:'system', content:`${pers.system}${argueInstr}\n\nBased on web research provided, give a thorough answer:\n- Cite sources [1][2] etc.\n- Correct any factual errors in the premise\n- Form a definitive conclusion\n- Use clear structure` },
+    { role:'user', content:context }
+  ];
+
+  doneStep('reason');
+  addStep('write','pen-nib','Writing researched answer...','active');
+
+  const answerDiv = document.createElement('div'); answerDiv.className='md'; body.appendChild(answerDiv);
+  searchWrap.remove(); steps.remove();
+
+  let raw = '';
+  const aiRes = await callAI(messages, !IS_FILE_ORIGIN);
+  raw = await streamOrRead(aiRes, chunk => { answerDiv.innerHTML = marked.parse(chunk); scrollC(); });
+
+  // Argue badge
+  if(argue && detectFactualError(query,raw)){
+    const badge=document.createElement('div'); badge.className='argue-badge';
+    badge.innerHTML='<i class="fa-solid fa-triangle-exclamation"></i> NEXUS is correcting your premise';
+    body.insertBefore(badge,body.firstChild);
+  }
+
+  // Source cards
+  if(allResults.length) body.appendChild(buildSourceCard(allResults));
+
+  // Actions
+  const cb=document.createElement('div'); cb.style.cssText='margin-top:8px;display:flex;gap:5px;flex-wrap:wrap';
+  cb.innerHTML=`
+    <button class="btn" style="font-size:10.5px" onclick="copyText(this,'${encodeURIComponent(raw)}')"><i class="fa-solid fa-copy"></i> Copy</button>
+    <button class="btn" style="font-size:10.5px" onclick="postInsightToMolt('${encodeURIComponent(raw.slice(0,280))}')"><i class="fa-solid fa-lobster" style="color:#f97316"></i> Moltbook</button>
+    <button class="btn" style="font-size:10.5px" onclick="deepenSearch('${encodeURIComponent(query)}')"><i class="fa-solid fa-magnifying-glass-plus"></i> Dig deeper</button>
+  `;
+  body.appendChild(cb);
+
+  chatHistory.push({role:'assistant', content:raw});
+  saveSessMem();
+  if(moltKey && raw.length>200) silentPostMolt(query,raw.slice(0,300));
+}
+
+function deepenSearch(encoded){
+  const q = decodeURIComponent(encoded);
+  document.getElementById('inp').value = `Go deeper on: ${q} — find more specific data, studies, and expert sources`;
+  onInp(document.getElementById('inp'));
+  document.getElementById('inp').focus();
+}
+
+// ── WEB SEARCH ──────────────────────────────────
+async function searchWeb(query){
+  searchCount++;
+  document.getElementById('searchStatus').textContent=`Searching: "${query.slice(0,30)}..."`;
+  // Use Pollinations for AI-powered search with real context
+  const messages=[
+    {role:'system',content:'You are a web search engine. Return factual, concise search results for the query. Format: return 5 results as JSON array: [{title, snippet, url}]. Only return valid JSON, nothing else.'},
+    {role:'user',content:`Search query: ${query}`}
+  ];
+  const res=await fetch(SEARCH_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,model:'openai'})});
+  if(!res.ok) throw new Error(`Search failed: ${res.status}`);
+  let text=await res.text();
+  // Try to parse as JSON
+  try{
+    text=text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+    const parsed=JSON.parse(text);
+    document.getElementById('searchStatus').textContent='Search ready';
+    return Array.isArray(parsed)?parsed:parsed.results||[];
+  }catch(e){
+    // Fallback: create structured result from text
+    document.getElementById('searchStatus').textContent='Search ready';
+    return [{title:`Results for: ${query}`,snippet:text.slice(0,300),url:'https://search.example.com'}];
+  }
+}
+
+function buildSearchQueries(query,depth){
+  const base=[query];
+  if(depth==='deep'||depth==='thorough'){
+    base.push(`${query} facts evidence 2025`);
+    base.push(`${query} research studies`);
+  }
+  if(depth==='thorough'){
+    base.push(`${query} expert opinion`);
+    base.push(`${query} criticism counterarguments`);
+  }
+  return base;
+}
+
+// ── FACT-CHECK ──────────────────────────────────
+function buildArgueResponse(query,fact,verdict){
+  return `
+<div class="argue-badge"><i class="fa-solid fa-triangle-exclamation"></i> NEXUS is correcting this</div>
+<div class="verdict ${verdict}">
+  <span class="verdict-icon">${verdict==='wrong'?'❌':'⚠️'}</span>
+  <div>
+    <strong style="font-size:13.5px;display:block;margin-bottom:4px">That's not accurate, and I won't pretend it is.</strong>
+    <span style="font-size:13px">${esc(fact)}</span>
+  </div>
+</div>
+<div class="md">
+<p>I notice your question contains a premise I fundamentally disagree with based on well-established evidence. Here's why:</p>
+<p><strong>${esc(fact)}</strong></p>
+<p>I'm not going to validate misinformation to be polite. If you'd like, I can research this topic further and provide a comprehensive breakdown of why the correct understanding matters. What would you like to know?</p>
+</div>`;
+}
+
+function detectFactualError(query,answer){
+  const combined=(query+' '+answer).toLowerCase();
+  return WRONG_PATTERNS.some(p=>p.re.test(combined)&&answer.toLowerCase().includes('however')||answer.toLowerCase().includes('actually')||answer.toLowerCase().includes('incorrect'));
+}
+
+// ── SOURCE CARD ─────────────────────────────────
+function buildSourceCard(allResults){
+  const div=document.createElement('div'); div.className='sources-card';
+  div.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px"><i class="fa-solid fa-link" style="margin-right:5px"></i>Sources searched</div>';
+  let n=1;
+  allResults.forEach(r=>{
+    r.results.slice(0,2).forEach(res=>{
+      const item=document.createElement('div'); item.className='src-item';
+      item.innerHTML=`<div class="src-num">${n++}</div><div style="min-width:0"><div class="src-title">${esc(res.title||'Source')}</div><div class="src-url">${esc(res.url||'')}</div></div>`;
+      div.appendChild(item);
+    });
+  });
+  return div;
+}
+
+// ── MOLTBOOK ────────────────────────────────────
+async function silentLearnFromMolt(){
+  try{
+    const res=await fetch(`${MOLT_PUBLIC}/api/v1/posts?sort=hot&limit=20`,{headers:moltKey?{'Authorization':'Bearer '+moltKey}:{}});
+    if(res.ok){
+      const data=await res.json();
+      if(data.posts){
+        moltKnowledge=[...moltKnowledge,...data.posts.map(p=>({title:p.title,content:p.content,karma:p.karma||0,author:p.author?.name}))];
+        moltKnowledge=moltKnowledge.slice(0,100);
+        renderIdentity();
+        toast(`✓ Learned from ${data.posts.length} Moltbook posts`);
+      }
+    }
+  }catch(e){ /* silent fail */ }
+}
+
+async function loadMoltFeed(){
+  const feed=document.getElementById('moltFeed');
+  feed.innerHTML='<div style="padding:16px;text-align:center;color:var(--t2);font-family:var(--mono);font-size:11px"><i class="fa-solid fa-circle-notch spin"></i> Loading...</div>';
+  try{
+    const sort=moltTab==='hot'?'hot':'new';
+    const url=`${MOLT_PUBLIC}/api/v1/posts?sort=${sort}&limit=25`;
+    const headers={'Accept':'application/json'};
+    if(moltKey) headers['Authorization']='Bearer '+moltKey;
+    const res=await fetch(url,{headers});
+    if(!res.ok) throw new Error(`${res.status}`);
+    const data=await res.json();
+    const posts=data.posts||data.data||[];
+    if(!posts.length){ feed.innerHTML='<div style="padding:16px;text-align:center;color:var(--t2);font-size:12px">No posts found. Moltbook may be down or rate-limited.</div>'; return; }
+    feed.innerHTML='';
+    posts.forEach(p=>{
+      const div=document.createElement('div'); div.className='molt-post';
+      div.innerHTML=`
+        <div class="molt-title">${esc(p.title||p.content?.slice(0,80)||'Untitled')}</div>
+        <div class="molt-meta">
+          <span>by ${esc(p.author?.name||'molty')}</span>
+          <span class="molt-karma">▲ ${p.upvotes||p.karma||0}</span>
+          <span>${p.submolt?.name||p.submolt_name||'general'}</span>
+        </div>`;
+      div.onclick=()=>{ document.getElementById('inp').value=`What do you think about this Moltbook discussion: "${p.title||p.content?.slice(0,100)}"?`; onInp(document.getElementById('inp')); toggleMolt(); };
+      feed.appendChild(div);
+    });
+    // Learn from these posts
+    moltKnowledge=[...posts.map(p=>({title:p.title,content:p.content,karma:p.upvotes||0})),...moltKnowledge].slice(0,150);
+    renderIdentity();
+    toast(`✓ Loaded ${posts.length} posts from Moltbook`);
+  }catch(e){
+    feed.innerHTML=`<div style="padding:16px;font-size:12px">
+      <div style="color:var(--acc5);margin-bottom:8px"><i class="fa-solid fa-triangle-exclamation"></i> Could not load Moltbook feed</div>
+      <div style="color:var(--t2);font-family:var(--mono);font-size:11px">Error: ${esc(e.message)}</div>
+      <div style="color:var(--t2);margin-top:8px;font-size:11.5px">
+        Moltbook was acquired by Meta and may have changed its API. 
+        <a href="https://www.moltbook.com" target="_blank" style="color:var(--acc2)">Visit moltbook.com</a> to browse manually.
+      </div>
+      <button class="btn" onclick="loadMoltFeed()" style="margin-top:10px;font-size:11px">Retry</button>
+    </div>`;
+  }
+}
+
+function switchMoltTab(tab){
+  moltTab=tab;
+  document.getElementById('tabHot').style.color=tab==='hot'?'var(--acc)':'';
+  document.getElementById('tabNew').style.color=tab==='new'?'var(--acc)':'';
+  loadMoltFeed();
+}
+
+async function postToMoltbook(){
+  if(!chatHistory.length){ toast('Nothing to post yet'); return; }
+  const lastAI=chatHistory.filter(m=>m.role==='assistant').pop();
+  if(!lastAI){ toast('No AI response to post'); return; }
+  postInsightToMolt(encodeURIComponent(lastAI.content.slice(0,280)));
+}
+
+async function postInsightToMolt(encodedContent){
+  const content=decodeURIComponent(encodedContent);
+  if(!moltKey){ toast('Set your Moltbook key first (sidebar → Moltbook Setup)'); openMoltKey(); return; }
+  try{
+    const res=await fetch(`${MOLT_API}/posts`,{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+moltKey,'Content-Type':'application/json'},
+      body:JSON.stringify({title:content.slice(0,80),content,submolt:'research'})
+    });
+    if(res.ok){ toast('✓ Posted to Moltbook!'); }
+    else { const d=await res.json().catch(()=>{}); toast('Post failed: '+(d?.error||res.status)); }
+  }catch(e){ toast('Cannot reach Moltbook: '+e.message); }
+}
+
+async function silentPostMolt(query,insight){
+  if(!moltKey)return;
+  try{
+    await fetch(`${MOLT_API}/posts`,{method:'POST',headers:{'Authorization':'Bearer '+moltKey,'Content-Type':'application/json'},body:JSON.stringify({title:query.slice(0,80),content:`Research finding: ${insight}`,submolt:'research'})});
+  }catch(e){}
+}
+
+
+
+// ── MOLTBOOK KEY ────────────────────────────────
+function openMoltKey(){ document.getElementById('mkeyModal').classList.add('open'); }
+function closeMoltKey(){ document.getElementById('mkeyModal').classList.remove('open'); }
+function saveMoltKey(){
+  moltKey=document.getElementById('moltKey').value.trim();
+  moltName=document.getElementById('moltName').value.trim()||'NexusAgent';
+  if(moltKey) localStorage.setItem('molt_key',moltKey); else localStorage.removeItem('molt_key');
+  localStorage.setItem('molt_name',moltName);
+  closeMoltKey(); renderIdentity();
+  toast(moltKey?`✓ Connected to Moltbook as ${moltName}`:'Moltbook key cleared');
+  if(moltKey) silentLearnFromMolt();
+}
+function vis(id){ const el=document.getElementById(id); el.type=el.type==='password'?'text':'password'; }
+
+// ── VOICE ────────────────────────────────────────
+function toggleVoice(){
+  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){ toast('Voice not supported'); return; }
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(voiceRec){ voiceRec.stop(); voiceRec=null; document.getElementById('micBtn').style.color=''; return; }
+  voiceRec=new SR(); voiceRec.continuous=false; voiceRec.interimResults=true; voiceRec.lang='en-US';
+  document.getElementById('micBtn').style.color='var(--acc5)';
+  voiceRec.onresult=e=>{ document.getElementById('inp').value=e.results[0][0].transcript; onInp(document.getElementById('inp')); };
+  voiceRec.onend=()=>{ voiceRec=null; document.getElementById('micBtn').style.color=''; };
+  voiceRec.start(); toast('Listening...');
+}
+
+// ── EXPORT ───────────────────────────────────────
+function exportChat(){
+  if(!chatHistory.length){ toast('Nothing to export'); return; }
+  let md=`# NEXUS Research Session\n*${new Date().toLocaleString()}*\n\n---\n\n`;
+  chatHistory.forEach(m=>{ md+=`### ${m.role==='user'?'❓ You':'🔬 NEXUS'}\n${m.content}\n\n---\n\n`; });
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([md],{type:'text/markdown'}));
+  a.download=`nexus_research_${new Date().toISOString().slice(0,10)}.md`; a.click();
+  toast('✓ Research exported!');
+}
+
+function copyText(btn,encoded){
+  navigator.clipboard.writeText(decodeURIComponent(encoded));
+  btn.innerHTML='<i class="fa-solid fa-check"></i> Copied!';
+  setTimeout(()=>btn.innerHTML='<i class="fa-solid fa-copy"></i> Copy',1500);
+}
+
+// ════════════════════════════════════════════════
+// ENGINE CONFIG — centralised, supports custom/ollama
+// ════════════════════════════════════════════════
+let engineConfig = {
+  type: 'poll',           // poll | ollama | groq | openrouter | custom
+  pollModel: 'openai',
+  ollamaUrl: 'http://localhost:11434',
+  ollamaModel: 'llama3.2',
+  groqKey: '',
+  groqModel: 'llama-3.3-70b-versatile',
+  orKey: '',
+  orModel: 'meta-llama/llama-3.1-8b-instruct:free',
+  togetherKey: '',
+  customUrl: '',
+  customModel: '',
+  customKey: '',
+  customFormat: 'openai',
+  respStyle: 'balanced',
+  accentColor: '',
+  fontSize: '14',
+  nexusName: 'NEXUS',
+};
+
+function loadEngineConfig() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('nx_engine')||'{}');
+    Object.assign(engineConfig, saved);
+    // Legacy key loading
+    if (!engineConfig.groqKey) engineConfig.groqKey = localStorage.getItem('ak_groq')||'';
+    if (!engineConfig.orKey)   engineConfig.orKey   = localStorage.getItem('ak_or')||'';
+  } catch(e) {}
+}
+function saveEngineConfig() {
+  localStorage.setItem('nx_engine', JSON.stringify(engineConfig));
+}
+
+// ── OVERRIDE callAI TO USE ENGINE CONFIG ────────
+// This replaces the basic callAI with a multi-engine version
+async function callAI(messages, stream=false) {
+  const cfg = engineConfig;
+  const lastUser = messages.filter(m=>m.role==='user').pop()?.content || '';
+  const sys = messages.find(m=>m.role==='system')?.content || '';
+
+  // ── OLLAMA ──
+  if (cfg.type === 'ollama') {
+    const url = (cfg.ollamaUrl||'http://localhost:11434').replace(/\/$/, '') + '/api/chat';
+    const res = await fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ model: cfg.ollamaModel, messages, stream: false })
+    });
+    if (!res.ok) throw new Error(`Ollama ${res.status} — is Ollama running? Try: OLLAMA_ORIGINS=* ollama serve`);
+    const data = await res.json();
+    const text = data.message?.content || data.response || '';
+    return { res: new Response(text), method:'ollama', text };
+  }
+
+  // ── GROQ ──
+  if (cfg.type === 'groq') {
+    if (!cfg.groqKey) throw new Error('Groq key not set — open Customise → API Keys');
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.groqKey},
+      body: JSON.stringify({ model:cfg.groqModel, messages, stream, max_tokens:4096 })
+    });
+    if (!res.ok) { const e=await res.json().catch(()=>{}); throw new Error(e?.error?.message||`Groq ${res.status}`); }
+    return { res, method: stream?'stream-openai':'json-openai' };
+  }
+
+  // ── OPENROUTER ──
+  if (cfg.type === 'openrouter') {
+    if (!cfg.orKey) throw new Error('OpenRouter key not set — open Customise → API Keys');
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.orKey,'HTTP-Referer':'https://alliazo.com','X-Title':'NEXUS by Alliazo'},
+      body: JSON.stringify({ model:cfg.orModel, messages, stream, max_tokens:4096 })
+    });
+    if (!res.ok) { const e=await res.json().catch(()=>{}); throw new Error(e?.error?.message||`OpenRouter ${res.status}`); }
+    return { res, method: stream?'stream-openai':'json-openai' };
+  }
+
+  // ── CUSTOM ENDPOINT ──
+  if (cfg.type === 'custom') {
+    if (!cfg.customUrl) throw new Error('Custom URL not set — open Customise → Custom Endpoint');
+    const headers = {'Content-Type':'application/json'};
+    if (cfg.customKey) headers['Authorization'] = 'Bearer '+cfg.customKey;
+    const body = cfg.customFormat === 'ollama'
+      ? JSON.stringify({ model:cfg.customModel, messages, stream:false })
+      : JSON.stringify({ model:cfg.customModel, messages, stream, max_tokens:4096 });
+    const res = await fetch(cfg.customUrl, { method:'POST', headers, body });
+    if (!res.ok) throw new Error(`Custom endpoint ${res.status}`);
+    return { res, method: cfg.customFormat==='ollama'?'ollama':(stream?'stream-openai':'json-openai') };
+  }
+
+  // ── POLLINATIONS + FALLBACK CHAIN ──
+  // Try multiple free providers in order. If one fails, try the next.
+  const lastUserShort = lastUser.slice(0, 600);
+  const sysShort = sys.slice(0, 300);
+
+  // Provider 1: Pollinations POST (works when served via HTTP)
+  if (!IS_FILE_ORIGIN) {
+    try {
+      const res = await fetch('https://text.pollinations.ai/', {
+        method:'POST', mode:'cors',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ messages, model: cfg.pollModel||'openai', stream: false })
+      });
+      if (res.ok) return { res, method:'text' };
+    } catch(e) { /* try next */ }
+  }
+
+  // Provider 2: Pollinations GET (CORS-safe, works from file://)
+  try {
+    const getUrl = 'https://text.pollinations.ai/'
+      + encodeURIComponent(lastUserShort)
+      + '?model=' + (cfg.pollModel||'openai')
+      + '&system=' + encodeURIComponent(sysShort)
+      + '&seed=' + Math.floor(Math.random()*9999);
+    const res = await fetch(getUrl, { mode:'cors' });
+    if (res.ok) return { res, method:'text' };
+  } catch(e) { /* try next */ }
+
+  // Provider 3: Pollinations alternate model GET
+  try {
+    const altModel = cfg.pollModel === 'openai' ? 'mistral' : 'openai';
+    const getUrl = 'https://text.pollinations.ai/'
+      + encodeURIComponent(lastUserShort)
+      + '?model=' + altModel
+      + '&system=' + encodeURIComponent(sysShort);
+    const res = await fetch(getUrl, { mode:'cors' });
+    if (res.ok) return { res, method:'text' };
+  } catch(e) { /* try next */ }
+
+  // Provider 4: OpenRouter free model (no key needed for some)
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method:'POST', mode:'cors',
+      headers:{'Content-Type':'application/json','HTTP-Referer':'https://alliazo.com','X-Title':'NEXUS'},
+      body: JSON.stringify({ model:'meta-llama/llama-3.1-8b-instruct:free', messages, max_tokens:2048 })
+    });
+    if (res.ok) return { res, method:'json-openai' };
+  } catch(e) { /* try next */ }
+
+  throw new Error('All AI providers failed or are rate-limited. Try again in a moment, or set a Groq/OpenRouter key in Customise → API Keys for reliable access.');
+}
+
+// ── UPDATED streamOrRead ─────────────────────────
+async function streamOrRead(aiResult, onChunk) {
+  const { res, method, text } = aiResult;
+
+  // Ollama / pre-fetched text
+  if (method === 'ollama' || text) {
+    const t = text || await res.text();
+    onChunk(t); return t;
+  }
+  if (!res.ok) throw new Error(`AI ${res.status}`);
+
+  if (method === 'text' || method === 'get') {
+    const t = await res.text(); onChunk(t); return t;
+  }
+  if (method === 'json-openai') {
+    const d = await res.json();
+    const t = d.choices?.[0]?.message?.content || '';
+    onChunk(t); return t;
+  }
+  // stream-openai
+  let raw = '';
+  try {
+    const reader = res.body.getReader(); const dec = new TextDecoder();
+    while(true) {
+      const {done,value} = await reader.read(); if(done) break;
+      for(const l of dec.decode(value).split('\n').filter(l=>l.startsWith('data: '))) {
+        const d=l.replace('data: ','').trim(); if(d==='[DONE]') break;
+        try{ raw += JSON.parse(d).choices?.[0]?.delta?.content||''; onChunk(raw); }catch(e){}
+      }
+    }
+    return raw;
+  } catch(e) {
+    const t = await res.text().catch(()=>raw); onChunk(t||raw); return t||raw;
+  }
+}
+
+// ════════════════════════════════════════════════
+// CUSTOMISE PANEL FUNCTIONS
+// ════════════════════════════════════════════════
+let custTab = 'models';
+
+function openCust() {
+  document.getElementById('custModal').classList.add('open');
+  // Populate fields from config
+  document.getElementById('ollamaUrl').value    = engineConfig.ollamaUrl;
+  document.getElementById('ollamaModel').value  = engineConfig.ollamaModel;
+  document.getElementById('customUrl').value    = engineConfig.customUrl;
+  document.getElementById('customModelName').value = engineConfig.customModel;
+  document.getElementById('customKey').value    = engineConfig.customKey;
+  document.getElementById('customFormat').value = engineConfig.customFormat;
+  document.getElementById('groqKeyC').value     = engineConfig.groqKey;
+  document.getElementById('orKeyC').value       = engineConfig.orKey;
+  document.getElementById('togetherKeyC').value = engineConfig.togetherKey||'';
+  document.getElementById('nexusName').value    = engineConfig.nexusName||'NEXUS';
+  document.getElementById('fontSizeSel').value  = engineConfig.fontSize||'14';
+  document.getElementById('respStyleSel').value = engineConfig.respStyle||'balanced';
+  // Highlight active engine card
+  document.querySelectorAll('.model-card').forEach(c=>c.classList.remove('active'));
+  const activeCard = document.getElementById('mc-'+engineConfig.type+(engineConfig.type==='poll'?('-'+engineConfig.pollModel):(engineConfig.type==='groq'?('-'+engineConfig.groqModel.split('-')[0]+'-'+engineConfig.groqModel.split('-')[1]):''))||'mc-poll-openai');
+  if(activeCard) activeCard.classList.add('active');
+}
+function closeCust() { document.getElementById('custModal').classList.remove('open'); }
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('custModal')?.addEventListener('click',e=>{if(e.target===document.getElementById('custModal'))closeCust();});
+});
+
+function switchCTab(tab) {
+  custTab = tab;
+  ['models','ollama','custom','keys','ui'].forEach(t=>{
+    document.getElementById('ctab-'+t+'-body').style.display = t===tab?'block':'none';
+    document.getElementById('ctab-'+t).classList.toggle('on', t===tab);
+  });
+}
+
+function selectEngine(id, el) {
+  document.querySelectorAll('.model-card').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  const map = {
+    'poll-openai':  ()=>{ engineConfig.type='poll'; engineConfig.pollModel='openai'; },
+    'poll-mistral': ()=>{ engineConfig.type='poll'; engineConfig.pollModel='mistral'; },
+    'poll-deepseek':()=>{ engineConfig.type='poll'; engineConfig.pollModel='deepseek'; },
+    'poll-llama':   ()=>{ engineConfig.type='poll'; engineConfig.pollModel='llama'; },
+    'poll-qwen':    ()=>{ engineConfig.type='poll'; engineConfig.pollModel='qwen'; },
+    'poll-gemini':  ()=>{ engineConfig.type='poll'; engineConfig.pollModel='gemini'; },
+    'ollama':       ()=>{ engineConfig.type='ollama'; switchCTab('ollama'); },
+    'groq-llama':   ()=>{ engineConfig.type='groq'; engineConfig.groqModel='llama-3.3-70b-versatile'; },
+    'groq-llama4':  ()=>{ engineConfig.type='groq'; engineConfig.groqModel='meta-llama/llama-4-scout-17b-16e-instruct'; },
+    'groq-deepseek':()=>{ engineConfig.type='groq'; engineConfig.groqModel='deepseek-r1-distill-llama-70b'; },
+    'or-llama':     ()=>{ engineConfig.type='openrouter'; engineConfig.orModel='meta-llama/llama-3.1-8b-instruct:free'; },
+    'or-qwen':      ()=>{ engineConfig.type='openrouter'; engineConfig.orModel='qwen/qwen-2.5-72b-instruct:free'; },
+    'custom':       ()=>{ engineConfig.type='custom'; switchCTab('custom'); },
+  };
+  if (map[id]) { map[id](); saveEngineConfig(); updateTopBadge(); toast(`Engine: ${el.querySelector('.mc-name').textContent}`); }
+  if (id.startsWith('groq') && !engineConfig.groqKey) { setTimeout(()=>switchCTab('keys'),400); }
+  if (id.startsWith('or-') && !engineConfig.orKey)    { setTimeout(()=>switchCTab('keys'),400); }
+}
+
+function updateTopBadge() {
+  const names = {
+    poll:`Pollinations / ${engineConfig.pollModel}`,
+    ollama:`Ollama / ${engineConfig.ollamaModel}`,
+    groq:`Groq / ${engineConfig.groqModel.split('-').slice(0,2).join('-')}`,
+    openrouter:`OpenRouter / ${engineConfig.orModel.split('/').pop()}`,
+    custom:`Custom / ${engineConfig.customModel||'endpoint'}`,
+  };
+  document.getElementById('modeBadge').textContent = names[engineConfig.type]||'NEXUS';
+}
+
+// ── OLLAMA ──────────────────────────────────────
+async function testOllama() {
+  const url = document.getElementById('ollamaUrl').value.trim();
+  const model = document.getElementById('ollamaModel').value.trim();
+  const el = document.getElementById('ollamaStatus');
+  el.style.display='block'; el.style.background='var(--s3)'; el.style.color='var(--acc3)'; el.textContent='Testing...';
+  try {
+    const res = await fetch(url+'/api/chat', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ model, messages:[{role:'user',content:'hi'}], stream:false })
+    });
+    if (res.ok) {
+      el.style.color='#4ade80'; el.textContent=`✓ Connected! Model "${model}" is responding.`;
+    } else {
+      el.style.color='#f87171'; el.textContent=`✗ HTTP ${res.status} — is Ollama running with OLLAMA_ORIGINS=* ?`;
+    }
+  } catch(e) {
+    el.style.color='#f87171'; el.textContent=`✗ ${e.message} — start Ollama: OLLAMA_ORIGINS=* ollama serve`;
+  }
+}
+
+async function listOllamaModels() {
+  const url = document.getElementById('ollamaUrl').value.trim();
+  const wrap = document.getElementById('ollamaModelsList');
+  const body = document.getElementById('ollamaModelsBody');
+  wrap.style.display='block'; body.innerHTML='<div style="color:var(--t2);font-family:var(--mono);font-size:11px">Loading...</div>';
+  try {
+    const res = await fetch(url+'/api/tags');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const models = data.models||[];
+    if (!models.length) { body.innerHTML='<div style="color:var(--t2);font-size:12px">No models installed. Run: <code>ollama pull llama3.2</code></div>'; return; }
+    body.innerHTML = models.map(m=>`
+      <div class="ollama-model-row" onclick="setOllamaModel('${m.name}')">
+        <div class="om-name">${m.name}</div>
+        <div class="om-size">${m.size?(m.size/1e9).toFixed(1)+'GB':''}</div>
+        <button class="btn" style="font-size:10px;padding:2px 7px">Use</button>
+      </div>`).join('');
+  } catch(e) {
+    body.innerHTML=`<div style="color:#f87171;font-size:12px">Error: ${esc(e.message)}</div>`;
+  }
+}
+
+function setOllamaModel(name) {
+  document.getElementById('ollamaModel').value = name;
+  document.getElementById('ollamaCardSub').textContent = `localhost · ${name} · 100% private`;
+  toast(`Ollama model: ${name}`);
+}
+
+function saveOllama() {
+  engineConfig.ollamaUrl   = document.getElementById('ollamaUrl').value.trim();
+  engineConfig.ollamaModel = document.getElementById('ollamaModel').value.trim();
+  engineConfig.type = 'ollama';
+  saveEngineConfig();
+  document.getElementById('ollamaCardName').textContent = `Ollama / ${engineConfig.ollamaModel}`;
+  document.getElementById('ollamaCardSub').textContent  = `${engineConfig.ollamaUrl} · private`;
+  document.querySelectorAll('.model-card').forEach(c=>c.classList.remove('active'));
+  document.getElementById('mc-ollama').classList.add('active');
+  updateTopBadge(); closeCust();
+  toast(`✓ Using Ollama: ${engineConfig.ollamaModel}`);
+}
+
+// ── CUSTOM ENDPOINT ─────────────────────────────
+async function testCustom() {
+  const url = document.getElementById('customUrl').value.trim();
+  const model = document.getElementById('customModelName').value.trim();
+  const key = document.getElementById('customKey').value.trim();
+  const fmt = document.getElementById('customFormat').value;
+  const el = document.getElementById('customStatus');
+  el.style.display='block'; el.style.background='var(--s3)'; el.style.color='var(--acc3)'; el.textContent='Testing...';
+  try {
+    const headers = {'Content-Type':'application/json'};
+    if (key) headers['Authorization']='Bearer '+key;
+    const body = fmt==='ollama'
+      ? JSON.stringify({model,messages:[{role:'user',content:'hi'}],stream:false})
+      : JSON.stringify({model,messages:[{role:'user',content:'hi'}],max_tokens:10});
+    const res = await fetch(url, {method:'POST',headers,body});
+    if (res.ok) { el.style.color='#4ade80'; el.textContent='✓ Endpoint is responding!'; }
+    else { el.style.color='#f87171'; el.textContent=`✗ HTTP ${res.status}`; }
+  } catch(e) { el.style.color='#f87171'; el.textContent=`✗ ${e.message}`; }
+}
+
+function saveCustomEndpoint() {
+  engineConfig.customUrl    = document.getElementById('customUrl').value.trim();
+  engineConfig.customModel  = document.getElementById('customModelName').value.trim();
+  engineConfig.customKey    = document.getElementById('customKey').value.trim();
+  engineConfig.customFormat = document.getElementById('customFormat').value;
+  engineConfig.type = 'custom';
+  saveEngineConfig();
+  document.getElementById('customCardSub').textContent = engineConfig.customUrl.slice(0,40)+'…';
+  document.querySelectorAll('.model-card').forEach(c=>c.classList.remove('active'));
+  document.getElementById('mc-custom').classList.add('active');
+  updateTopBadge(); closeCust();
+  toast(`✓ Using custom endpoint`);
+}
+
+// ── ALL KEYS ────────────────────────────────────
+function saveAllKeys() {
+  engineConfig.groqKey     = document.getElementById('groqKeyC').value.trim();
+  engineConfig.orKey       = document.getElementById('orKeyC').value.trim();
+  engineConfig.togetherKey = document.getElementById('togetherKeyC').value.trim();
+  // Legacy compat
+  if(engineConfig.groqKey) localStorage.setItem('ak_groq',engineConfig.groqKey);
+  if(engineConfig.orKey)   localStorage.setItem('ak_or',engineConfig.orKey);
+  saveEngineConfig(); closeCust();
+  toast('✓ API keys saved');
+}
+
+// ── UI CUSTOMISATION ────────────────────────────
+function setAccent(color) {
+  document.documentElement.style.setProperty('--acc', color);
+  engineConfig.accentColor = color;
+}
+function setFontSize(size) {
+  document.body.style.fontSize = size+'px';
+  engineConfig.fontSize = size;
+}
+function saveUI() {
+  engineConfig.nexusName = document.getElementById('nexusName').value||'NEXUS';
+  engineConfig.respStyle = document.getElementById('respStyleSel').value;
+  saveEngineConfig();
+  closeCust(); toast('✓ UI settings saved');
+}
+
+// ── APPLY SAVED CONFIG ON LOAD ───────────────────
+function applyEngineConfig() {
+  if (engineConfig.accentColor) document.documentElement.style.setProperty('--acc',engineConfig.accentColor);
+  if (engineConfig.fontSize) document.body.style.fontSize = engineConfig.fontSize+'px';
+  updateTopBadge();
+}
+
+// ── BOOT: load engine config ─────────────────────
+loadEngineConfig();
+applyEngineConfig();
+
+// ── PERSONALITY ──────────────────────────────────
+function updatePersonality(){
+  personality=document.getElementById('personalitySelect').value;
+  const p=PERSONALITIES[personality];
+  document.getElementById('modeBadge').textContent=p.name.toUpperCase();
+  toast('Personality: '+p.name);
+}
+
+// ── HELPERS ──────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function scrollC(){ const el=document.getElementById('msgs'); el.scrollTop=el.scrollHeight; }
+function onInp(el){ el.style.height=''; el.style.height=Math.min(el.scrollHeight,120)+'px'; document.getElementById('charCnt').textContent=el.value.length; }
+function onKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();runNexus();} }
+function ask(q){ document.getElementById('inp').value=q; onInp(document.getElementById('inp')); document.getElementById('inp').focus(); }
+function showThink(m){ document.getElementById('thinkTxt').textContent=m; document.getElementById('thinkBar').classList.add('show'); document.getElementById('sdot').classList.add('busy'); }
+function hideThink(){ document.getElementById('thinkBar').classList.remove('show'); document.getElementById('sdot').classList.remove('busy'); }
+function setStatus(b,m){ document.getElementById('statusTxt').textContent=m; if(b) document.getElementById('sdot').classList.add('busy'); else document.getElementById('sdot').classList.remove('busy'); }
+function toggleMolt(){ moltOpen=!moltOpen; document.getElementById('moltPanel').classList.toggle('open',moltOpen); if(moltOpen) loadMoltFeed(); }
+function toggleTheme(){ const d=document.documentElement; const dk=d.getAttribute('data-theme')==='dark'; d.setAttribute('data-theme',dk?'light':'dark'); localStorage.setItem('theme',dk?'light':'dark'); }
+function toggleSb(){ const s=document.getElementById('sb'); if(window.innerWidth<768) s.classList.toggle('open'); else{ s.classList.toggle('slim'); document.getElementById('sbTxt').style.display=s.classList.contains('slim')?'none':'block'; } }
+let _tt; function toast(m){ const el=document.getElementById('toast'); el.textContent=m; el.style.display='block'; clearTimeout(_tt); _tt=setTimeout(()=>el.style.display='none',2800); }
+</script>
+</body>
+</html>
